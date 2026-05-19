@@ -1,0 +1,34 @@
+kind = "web"
+previewPath = "/"
+title = "HeyGen Studio"
+version = "1.0.0"
+id = "artifacts/heygen-studio"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 3000
+
+[services.development]
+run = "pnpm --filter @workspace/heygen-studio run dev"
+
+[services.development.health.startup]
+path = "/"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/heygen-studio", "run", "build" ]
+publicDir = "artifacts/heygen-studio/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "3000"
+BASE_PATH = "/"

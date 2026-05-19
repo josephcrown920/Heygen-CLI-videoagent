@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: HeyGen Studio API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: avatars
+    description: Avatar operations
+  - name: voices
+    description: Voice operations
+  - name: videos
+    description: Video operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,169 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /avatars:
+    get:
+      operationId: listAvatarLooks
+      tags: [avatars]
+      summary: List available avatar looks
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: token
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: ownership
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of avatar looks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvatarLookList"
+
+  /voices:
+    get:
+      operationId: listVoices
+      tags: [voices]
+      summary: List available voices
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: token
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: language
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: gender
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of voices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceList"
+
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List generated videos
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: token
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of videos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoList"
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Create a new avatar video
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoInput"
+      responses:
+        "201":
+          description: Video creation started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoCreateResult"
+
+  /videos/{videoId}:
+    get:
+      operationId: getVideo
+      tags: [videos]
+      summary: Get video status and details
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Video details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+    delete:
+      operationId: deleteVideo
+      tags: [videos]
+      summary: Delete a video
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /videos/agent:
+    post:
+      operationId: createVideoFromPrompt
+      tags: [videos]
+      summary: Create a video from a text prompt using Video Agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoAgentInput"
+      responses:
+        "201":
+          description: Video agent session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoCreateResult"
+
+  /credits:
+    get:
+      operationId: getCredits
+      tags: [videos]
+      summary: Get remaining HeyGen credits/balance for the account
+      responses:
+        "200":
+          description: Account credits info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Credits"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +198,144 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    AvatarLook:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: ["string", "null"]
+        avatar_type:
+          type: ["string", "null"]
+        preview_image_url:
+          type: ["string", "null"]
+        preview_video_url:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+      required: [id]
+
+    AvatarLookList:
+      type: object
+      properties:
+        avatars:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvatarLook"
+        next_token:
+          type: ["string", "null"]
+      required: [avatars]
+
+    Voice:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        preview_audio_url:
+          type: ["string", "null"]
+      required: [id]
+
+    VoiceList:
+      type: object
+      properties:
+        voices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Voice"
+        next_token:
+          type: ["string", "null"]
+      required: [voices]
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        title:
+          type: ["string", "null"]
+        video_url:
+          type: ["string", "null"]
+        thumbnail_url:
+          type: ["string", "null"]
+        duration:
+          type: ["number", "null"]
+        created_at:
+          type: ["integer", "null"]
+        error:
+          type: ["string", "null"]
+      required: [id, status]
+
+    VideoList:
+      type: object
+      properties:
+        videos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Video"
+        next_token:
+          type: ["string", "null"]
+      required: [videos]
+
+    VideoInput:
+      type: object
+      properties:
+        avatar_id:
+          type: string
+        voice_id:
+          type: string
+        script:
+          type: string
+        title:
+          type: ["string", "null"]
+        orientation:
+          type: string
+          enum: [landscape, portrait]
+          default: landscape
+      required: [avatar_id, voice_id, script]
+
+    VideoAgentInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+        avatar_id:
+          type: ["string", "null"]
+        voice_id:
+          type: ["string", "null"]
+        orientation:
+          type: string
+          enum: [landscape, portrait]
+          default: landscape
+      required: [prompt]
+
+    VideoCreateResult:
+      type: object
+      properties:
+        video_id:
+          type: string
+        session_id:
+          type: ["string", "null"]
+        status:
+          type: string
+      required: [video_id, status]
+
+    Credits:
+      type: object
+      properties:
+        remaining_credits:
+          type: ["number", "null"]
+        balance:
+          type: ["number", "null"]
+        credit_type:
+          type: ["string", "null"]
+      required: []

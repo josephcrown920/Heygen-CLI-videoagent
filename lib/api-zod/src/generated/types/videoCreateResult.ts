@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
+export interface VideoCreateResult {
+  video_id: string;
+  /** @nullable */
+  session_id?: string | null;
   status: string;
 }
