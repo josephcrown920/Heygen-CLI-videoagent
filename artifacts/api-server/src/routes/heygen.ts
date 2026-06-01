@@ -12,6 +12,7 @@ import {
 const router: IRouter = Router();
 
 const HEYGEN_API_BASE = "https://api.heygen.com";
+const REQUEST_TIMEOUT_MS = 30_000;
 
 function heygenHeaders() {
   const apiKey = process.env.HEYGEN_API_KEY;
@@ -23,14 +24,28 @@ function heygenHeaders() {
 }
 
 async function heygenFetch(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${HEYGEN_API_BASE}${path}`, {
-    ...options,
-    headers: {
-      ...heygenHeaders(),
-      ...(options.headers as Record<string, string> | undefined),
-    },
-  });
-  return res;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${HEYGEN_API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...heygenHeaders(),
+        ...(options.headers as Record<string, string> | undefined),
+      },
+    });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function extractError(body: { error?: { message?: string; code?: string | number } | string; message?: string }): string {
+  if (typeof body.error === "string") return body.error;
+  if (body.error?.message) return body.error.message;
+  if (body.message) return body.message;
+  return "An unexpected error occurred with HeyGen.";
 }
 
 // GET /avatars — list avatar looks
@@ -47,7 +62,17 @@ router.get("/avatars", async (req, res): Promise<void> => {
   if (parsed.data.ownership) params.set("ownership", parsed.data.ownership);
 
   const qs = params.toString() ? `?${params.toString()}` : "";
-  const upstream = await heygenFetch(`/v3/avatars/looks${qs}`);
+
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch(`/v3/avatars/looks${qs}`);
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen avatars fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
+
   const body = await upstream.json() as {
     data?: { looks?: unknown[]; next_token?: string | null };
     error?: { message?: string };
@@ -56,7 +81,7 @@ router.get("/avatars", async (req, res): Promise<void> => {
 
   if (!upstream.ok) {
     req.log.error({ status: upstream.status, body }, "HeyGen avatars error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
+    res.status(upstream.status).json({ error: extractError(body) });
     return;
   }
 
@@ -81,7 +106,17 @@ router.get("/voices", async (req, res): Promise<void> => {
   if (parsed.data.gender) params.set("gender", parsed.data.gender);
 
   const qs = params.toString() ? `?${params.toString()}` : "";
-  const upstream = await heygenFetch(`/v3/voices${qs}`);
+
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch(`/v3/voices${qs}`);
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen voices fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
+
   const body = await upstream.json() as {
     data?: { voices?: unknown[]; next_token?: string | null };
     error?: { message?: string };
@@ -90,7 +125,7 @@ router.get("/voices", async (req, res): Promise<void> => {
 
   if (!upstream.ok) {
     req.log.error({ status: upstream.status, body }, "HeyGen voices error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
+    res.status(upstream.status).json({ error: extractError(body) });
     return;
   }
 
@@ -113,7 +148,17 @@ router.get("/videos", async (req, res): Promise<void> => {
   if (parsed.data.token) params.set("token", parsed.data.token);
 
   const qs = params.toString() ? `?${params.toString()}` : "";
-  const upstream = await heygenFetch(`/v3/videos${qs}`);
+
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch(`/v3/videos${qs}`);
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen videos fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
+
   const body = await upstream.json() as {
     data?: { videos?: unknown[]; next_token?: string | null };
     error?: { message?: string };
@@ -122,13 +167,61 @@ router.get("/videos", async (req, res): Promise<void> => {
 
   if (!upstream.ok) {
     req.log.error({ status: upstream.status, body }, "HeyGen videos error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
+    res.status(upstream.status).json({ error: extractError(body) });
     return;
   }
 
   res.json({
     videos: body?.data?.videos ?? [],
     next_token: body?.data?.next_token ?? null,
+  });
+});
+
+// POST /videos/agent — create video from prompt (must be before /videos/:videoId)
+router.post("/videos/agent", async (req, res): Promise<void> => {
+  const parsed = CreateVideoFromPromptBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    prompt: parsed.data.prompt,
+    mode: "generate",
+    orientation: parsed.data.orientation ?? "landscape",
+  };
+  if (parsed.data.avatar_id) payload.avatar_id = parsed.data.avatar_id;
+  if (parsed.data.voice_id) payload.voice_id = parsed.data.voice_id;
+
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch("/v3/video-agents", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen video agent fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
+
+  const body = await upstream.json() as {
+    data?: { session_id?: string; video_id?: string; status?: string };
+    error?: { message?: string };
+    message?: string;
+  };
+
+  if (!upstream.ok) {
+    req.log.error({ status: upstream.status, body }, "HeyGen video agent error");
+    res.status(upstream.status).json({ error: extractError(body) });
+    return;
+  }
+
+  res.status(201).json({
+    video_id: body?.data?.video_id ?? body?.data?.session_id ?? "",
+    session_id: body?.data?.session_id ?? null,
+    status: body?.data?.status ?? "pending",
   });
 });
 
@@ -149,10 +242,19 @@ router.post("/videos", async (req, res): Promise<void> => {
     orientation: parsed.data.orientation ?? "landscape",
   };
 
-  const upstream = await heygenFetch("/v3/videos", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch("/v3/videos", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen create video fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
+
   const body = await upstream.json() as {
     data?: { video_id?: string; session_id?: string; status?: string };
     error?: { message?: string };
@@ -161,7 +263,7 @@ router.post("/videos", async (req, res): Promise<void> => {
 
   if (!upstream.ok) {
     req.log.error({ status: upstream.status, body }, "HeyGen create video error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
+    res.status(upstream.status).json({ error: extractError(body) });
     return;
   }
 
@@ -180,7 +282,16 @@ router.get("/videos/:videoId", async (req, res): Promise<void> => {
     return;
   }
 
-  const upstream = await heygenFetch(`/v3/videos/${params.data.videoId}`);
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch(`/v3/videos/${params.data.videoId}`);
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen get video fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
+
   const body = await upstream.json() as {
     data?: {
       video_id?: string;
@@ -199,7 +310,7 @@ router.get("/videos/:videoId", async (req, res): Promise<void> => {
 
   if (!upstream.ok) {
     req.log.error({ status: upstream.status, body }, "HeyGen get video error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
+    res.status(upstream.status).json({ error: extractError(body) });
     return;
   }
 
@@ -224,62 +335,40 @@ router.delete("/videos/:videoId", async (req, res): Promise<void> => {
     return;
   }
 
-  const upstream = await heygenFetch(`/v3/videos/${params.data.videoId}`, {
-    method: "DELETE",
-  });
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch(`/v3/videos/${params.data.videoId}`, {
+      method: "DELETE",
+    });
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen delete video fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
 
   if (!upstream.ok) {
     const body = await upstream.json() as { error?: { message?: string }; message?: string };
     req.log.error({ status: upstream.status, body }, "HeyGen delete video error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
+    res.status(upstream.status).json({ error: extractError(body) });
     return;
   }
 
   res.sendStatus(204);
 });
 
-// POST /videos/agent — create video from prompt
-router.post("/videos/agent", async (req, res): Promise<void> => {
-  const parsed = CreateVideoFromPromptBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  const payload: Record<string, unknown> = {
-    prompt: parsed.data.prompt,
-    mode: "generate",
-    orientation: parsed.data.orientation ?? "landscape",
-  };
-  if (parsed.data.avatar_id) payload.avatar_id = parsed.data.avatar_id;
-  if (parsed.data.voice_id) payload.voice_id = parsed.data.voice_id;
-
-  const upstream = await heygenFetch("/v3/video-agents", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  const body = await upstream.json() as {
-    data?: { session_id?: string; video_id?: string; status?: string };
-    error?: { message?: string };
-    message?: string;
-  };
-
-  if (!upstream.ok) {
-    req.log.error({ status: upstream.status, body }, "HeyGen video agent error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
-    return;
-  }
-
-  res.status(201).json({
-    video_id: body?.data?.video_id ?? body?.data?.session_id ?? "",
-    session_id: body?.data?.session_id ?? null,
-    status: body?.data?.status ?? "pending",
-  });
-});
-
 // GET /credits — get account credit balance
 router.get("/credits", async (req, res): Promise<void> => {
-  const upstream = await heygenFetch("/v1/user/remaining_quota");
+  let upstream: Response;
+  try {
+    upstream = await heygenFetch("/v1/user/remaining_quota");
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    req.log.error({ err }, "HeyGen credits fetch failed");
+    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    return;
+  }
+
   const body = await upstream.json() as {
     data?: {
       remaining_quota?: number | null;
@@ -292,7 +381,7 @@ router.get("/credits", async (req, res): Promise<void> => {
 
   if (!upstream.ok) {
     req.log.error({ status: upstream.status, body }, "HeyGen credits error");
-    res.status(upstream.status).json({ error: body?.error?.message ?? body?.message ?? "HeyGen error" });
+    res.status(upstream.status).json({ error: extractError(body) });
     return;
   }
 

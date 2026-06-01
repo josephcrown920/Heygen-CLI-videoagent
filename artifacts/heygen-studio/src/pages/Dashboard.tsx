@@ -8,23 +8,27 @@ import {
   getListAvatarLooksQueryKey,
   useListVoices,
   getListVoicesQueryKey,
-  useCreateVideo
+  useCreateVideo,
+  VideoInputOrientation
 } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
-import { Clapperboard, Wand2, ArrowRight, Video, Play, Loader2 } from "lucide-react";
+import { Clapperboard, Wand2, ArrowRight, Video, Play, Loader2, RefreshCw } from "lucide-react";
 import { VideoCard } from "@/components/VideoCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function Dashboard() {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [avatarId, setAvatarId] = useState<string>("");
   const [voiceId, setVoiceId] = useState<string>("");
   const [script, setScript] = useState("");
+  const [orientation, setOrientation] = useState<VideoInputOrientation>("landscape");
 
   const { data: videosData, isLoading } = useListVideos({ limit: 4 }, {
     query: {
@@ -32,18 +36,18 @@ export function Dashboard() {
     }
   });
 
-  const { data: credits } = useGetCredits({
+  const { data: credits, isRefetching: isRefetchingCredits, refetch: refetchCredits } = useGetCredits({
     query: {
       queryKey: getGetCreditsQueryKey()
     }
   });
 
-  const { data: avatarsData } = useListAvatarLooks({ limit: 10 }, {
-    query: { queryKey: getListAvatarLooksQueryKey({ limit: 10 }) }
+  const { data: avatarsData } = useListAvatarLooks({ limit: 20 }, {
+    query: { queryKey: getListAvatarLooksQueryKey({ limit: 20 }) }
   });
 
-  const { data: voicesData } = useListVoices({ limit: 10 }, {
-    query: { queryKey: getListVoicesQueryKey({ limit: 10 }) }
+  const { data: voicesData } = useListVoices({ limit: 20 }, {
+    query: { queryKey: getListVoicesQueryKey({ limit: 20 }) }
   });
 
   const createVideoMutation = useCreateVideo({
@@ -51,10 +55,12 @@ export function Dashboard() {
       onSuccess: () => {
         toast({ title: "Production started", description: "Your video is being generated." });
         setScript("");
+        queryClient.invalidateQueries({ queryKey: getListVideosQueryKey() });
         setLocation("/videos");
       },
-      onError: () => {
-        toast({ title: "Failed to create video", variant: "destructive" });
+      onError: (err: unknown) => {
+        const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        toast({ title: "Failed to create video", description: message, variant: "destructive" });
       }
     }
   });
@@ -69,7 +75,7 @@ export function Dashboard() {
         avatar_id: avatarId,
         voice_id: voiceId,
         script: script.trim(),
-        orientation: "landscape"
+        orientation
       }
     });
   };
@@ -121,12 +127,22 @@ export function Dashboard() {
         <div className="lg:col-span-1 bg-card border border-card-border rounded-xl p-6 flex flex-col justify-center items-center text-center gap-4">
           <div className="w-20 h-20 rounded-full border-4 border-primary/20 flex items-center justify-center relative">
             <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin opacity-20"></div>
-            <span className="text-3xl font-bold text-primary">{credits?.remaining_credits ?? "-"}</span>
+            <span className="text-3xl font-bold text-primary">{credits?.remaining_credits ?? "—"}</span>
           </div>
           <div>
             <h3 className="font-semibold text-lg">Available Credits</h3>
             <p className="text-sm text-muted-foreground">Each video generation consumes credits.</p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => refetchCredits()}
+            disabled={isRefetchingCredits}
+          >
+            <RefreshCw className={`w-3 h-3 mr-1.5 ${isRefetchingCredits ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </div>
 
@@ -155,6 +171,16 @@ export function Dashboard() {
               {voices.map(v => (
                 <SelectItem key={v.id} value={v.id}>{v.name || "Unnamed Voice"} ({v.language})</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={orientation} onValueChange={v => setOrientation(v as VideoInputOrientation)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="landscape">Landscape (16:9)</SelectItem>
+              <SelectItem value="portrait">Portrait (9:16)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -213,4 +239,3 @@ export function Dashboard() {
     </div>
   );
 }
-

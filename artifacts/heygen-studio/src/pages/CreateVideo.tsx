@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { 
   useListAvatarLooks, 
@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Volume2, Clapperboard, Loader2, Image as ImageIcon } from "lucide-react";
+import { Play, Volume2, Clapperboard, Loader2, Image as ImageIcon, Search } from "lucide-react";
 
 export function CreateVideo() {
   const [_, setLocation] = useLocation();
@@ -26,6 +26,8 @@ export function CreateVideo() {
   const [script, setScript] = useState("");
   const [title, setTitle] = useState("");
   const [orientation, setOrientation] = useState<VideoInputOrientation>("landscape");
+  const [avatarSearch, setAvatarSearch] = useState("");
+  const [voiceSearch, setVoiceSearch] = useState("");
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
@@ -44,14 +46,30 @@ export function CreateVideo() {
         toast({ title: "Production started", description: "Your video is being generated." });
         setLocation("/videos");
       },
-      onError: (err) => {
-        toast({ title: "Failed to create video", variant: "destructive" });
+      onError: (err: unknown) => {
+        const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        toast({ title: "Failed to create video", description: message, variant: "destructive" });
       }
     }
   });
 
-  const avatars = avatarsData?.avatars || [];
-  const voices = voicesData?.voices || [];
+  const allAvatars = avatarsData?.avatars || [];
+  const allVoices = voicesData?.voices || [];
+
+  const filteredAvatars = useMemo(() => {
+    const q = avatarSearch.trim().toLowerCase();
+    if (!q) return allAvatars;
+    return allAvatars.filter(a => (a.name ?? "").toLowerCase().includes(q));
+  }, [allAvatars, avatarSearch]);
+
+  const filteredVoices = useMemo(() => {
+    const q = voiceSearch.trim().toLowerCase();
+    if (!q) return allVoices;
+    return allVoices.filter(v =>
+      (v.name ?? "").toLowerCase().includes(q) ||
+      (v.language ?? "").toLowerCase().includes(q)
+    );
+  }, [allVoices, voiceSearch]);
 
   const handlePlayVoice = (voiceId: string, url: string) => {
     if (audioRef.current) {
@@ -121,17 +139,40 @@ export function CreateVideo() {
         <div className="w-full lg:w-1/2 flex flex-col gap-6 overflow-hidden">
           <Tabs defaultValue="avatar" className="flex flex-col h-full">
             <TabsList className="grid w-full grid-cols-2 bg-muted p-1 rounded-lg">
-              <TabsTrigger value="avatar" className="rounded-md">1. Cast Actor</TabsTrigger>
-              <TabsTrigger value="voice" className="rounded-md">2. Select Voice</TabsTrigger>
+              <TabsTrigger value="avatar" className="rounded-md">
+                1. Cast Actor
+                {selectedAvatarId && (
+                  <span className="ml-2 w-2 h-2 rounded-full bg-primary inline-block" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="voice" className="rounded-md">
+                2. Select Voice
+                {selectedVoiceId && (
+                  <span className="ml-2 w-2 h-2 rounded-full bg-primary inline-block" />
+                )}
+              </TabsTrigger>
             </TabsList>
             
             <div className="flex-1 mt-4 overflow-hidden border border-border rounded-xl bg-card">
-              <TabsContent value="avatar" className="h-full m-0 p-0">
-                <ScrollArea className="h-full">
+              <TabsContent value="avatar" className="h-full m-0 p-0 flex flex-col">
+                <div className="p-3 border-b border-border">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search avatars..."
+                      className="pl-9 h-8 text-sm bg-background"
+                      value={avatarSearch}
+                      onChange={e => setAvatarSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <ScrollArea className="flex-1">
                   <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {isLoadingAvatars ? (
                       [...Array(6)].map((_, i) => <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-lg" />)
-                    ) : avatars.map(avatar => (
+                    ) : filteredAvatars.length === 0 ? (
+                      <div className="col-span-3 py-8 text-center text-sm text-muted-foreground">No avatars match "{avatarSearch}"</div>
+                    ) : filteredAvatars.map(avatar => (
                       <div 
                         key={avatar.id}
                         onClick={() => setSelectedAvatarId(avatar.id)}
@@ -161,12 +202,25 @@ export function CreateVideo() {
                 </ScrollArea>
               </TabsContent>
               
-              <TabsContent value="voice" className="h-full m-0 p-0">
-                <ScrollArea className="h-full">
+              <TabsContent value="voice" className="h-full m-0 p-0 flex flex-col">
+                <div className="p-3 border-b border-border">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name or language..."
+                      className="pl-9 h-8 text-sm bg-background"
+                      value={voiceSearch}
+                      onChange={e => setVoiceSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <ScrollArea className="flex-1">
                   <div className="p-4 flex flex-col gap-2">
                     {isLoadingVoices ? (
                       [...Array(6)].map((_, i) => <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />)
-                    ) : voices.map(voice => (
+                    ) : filteredVoices.length === 0 ? (
+                      <div className="py-8 text-center text-sm text-muted-foreground">No voices match "{voiceSearch}"</div>
+                    ) : filteredVoices.map(voice => (
                       <div 
                         key={voice.id}
                         onClick={() => setSelectedVoiceId(voice.id)}
@@ -195,7 +249,7 @@ export function CreateVideo() {
                               {playingVoiceId === voice.id ? <Volume2 className="w-4 h-4 animate-pulse" /> : <Play className="w-4 h-4 ml-0.5" />}
                             </Button>
                           )}
-                          <div className={`w-4 h-4 rounded-full border ${selectedVoiceId === voice.id ? "border-[5px] border-primary" : "border-muted-foreground/30"}`} />
+                          <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${selectedVoiceId === voice.id ? "border-primary bg-primary" : "border-muted-foreground/30"}`} />
                         </div>
                       </div>
                     ))}
@@ -230,7 +284,7 @@ export function CreateVideo() {
               <Textarea 
                 id="script" 
                 placeholder="Hello team, today we'll be discussing..." 
-                className="min-h-[200px] resize-y bg-background font-mono text-sm"
+                className="min-h-[180px] resize-y bg-background font-mono text-sm"
                 value={script}
                 onChange={(e) => setScript(e.target.value)}
               />
@@ -258,6 +312,15 @@ export function CreateVideo() {
           </div>
 
           <div className="mt-auto">
+            {(!selectedAvatarId || !selectedVoiceId) && (
+              <p className="text-xs text-muted-foreground text-center mb-3">
+                {!selectedAvatarId && !selectedVoiceId
+                  ? "Select an avatar and a voice to continue"
+                  : !selectedAvatarId
+                  ? "Select an avatar to continue"
+                  : "Select a voice to continue"}
+              </p>
+            )}
             <Button 
               type="submit" 
               className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all"
@@ -266,7 +329,7 @@ export function CreateVideo() {
               {createVideoMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Rolling Action...
+                  Rolling Action…
                 </>
               ) : (
                 <>
