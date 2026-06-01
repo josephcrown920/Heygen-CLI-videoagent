@@ -379,7 +379,7 @@ export function Canvas() {
 
         <div className="mt-auto flex flex-col gap-2">
           <Button size="icon" variant="ghost" className="w-10 h-10" title="Toggle Grid" onClick={() => setShowGrid(g => !g)}>
-            <Grid className="w-4 h-4" className={showGrid ? "text-primary" : ""} />
+            <Grid className={`w-4 h-4 ${showGrid ? "text-primary" : ""}`} />
           </Button>
           <Button size="icon" variant="ghost" className="w-10 h-10" title="Export PNG" onClick={exportPNG}>
             <Download className="w-4 h-4" />
