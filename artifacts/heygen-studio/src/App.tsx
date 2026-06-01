@@ -11,6 +11,12 @@ import { CreateFromPrompt } from "@/pages/CreateFromPrompt";
 import { ModelHub } from "@/pages/ModelHub";
 import { GenerationStudio } from "@/pages/GenerationStudio";
 import { Creations } from "@/pages/Creations";
+import { CLI } from "@/pages/CLI";
+import { References } from "@/pages/References";
+import { ScenesProps } from "@/pages/ScenesProps";
+import { Canvas } from "@/pages/Canvas";
+import { Lyrics } from "@/pages/Lyrics";
+import { LiveAvatar } from "@/pages/LiveAvatar";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +38,12 @@ function Router() {
         <Route path="/models" component={ModelHub} />
         <Route path="/generate/:modelId" component={GenerationStudio} />
         <Route path="/creations" component={Creations} />
+        <Route path="/cli" component={CLI} />
+        <Route path="/references" component={References} />
+        <Route path="/scenes" component={ScenesProps} />
+        <Route path="/canvas" component={Canvas} />
+        <Route path="/lyrics" component={Lyrics} />
+        <Route path="/live-avatar" component={LiveAvatar} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

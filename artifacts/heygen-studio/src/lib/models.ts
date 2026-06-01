@@ -206,6 +206,40 @@ export const ALL_MODELS: Model[] = [
       { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "16:9", options: ASPECT_RATIO_OPTIONS },
     ],
   },
+  {
+    id: "fal-ai/ltx-video",
+    name: "LTX-Video",
+    description: "Lightricks' LTX-Video — ultra-fast open-source video generation. Real-time capable, exceptional quality per second.",
+    provider: "Lightricks",
+    providerColor: "#E11D48",
+    category: "video",
+    badge: "FAST",
+    params: [
+      { key: "prompt", label: "Prompt", type: "text", placeholder: "Describe the video scene in detail..." },
+      { key: "negative_prompt", label: "Negative Prompt", type: "text", placeholder: "What to avoid..." },
+      { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "16:9", options: ASPECT_RATIO_OPTIONS },
+      { key: "num_frames", label: "Frames", type: "number", default: 121, min: 25, max: 257 },
+      { key: "frame_rate", label: "Frame Rate", type: "number", default: 25, min: 12, max: 30 },
+      { key: "guidance_scale", label: "Guidance Scale", type: "number", default: 3, min: 1, max: 10 },
+      { key: "num_inference_steps", label: "Steps", type: "number", default: 40, min: 10, max: 60 },
+    ],
+  },
+  {
+    id: "fal-ai/ltx-video-v095/turbo",
+    name: "LTX-Video Turbo",
+    description: "LTX-Video 0.9.5 Turbo — fastest LTX variant, near real-time generation with distillation.",
+    provider: "Lightricks",
+    providerColor: "#E11D48",
+    category: "video",
+    badge: "FAST",
+    params: [
+      { key: "prompt", label: "Prompt", type: "text", placeholder: "Describe the video scene..." },
+      { key: "negative_prompt", label: "Negative Prompt", type: "text", placeholder: "What to avoid..." },
+      { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "16:9", options: ASPECT_RATIO_OPTIONS },
+      { key: "num_frames", label: "Frames", type: "number", default: 121, min: 25, max: 257 },
+      { key: "num_inference_steps", label: "Steps", type: "number", default: 8, min: 4, max: 16 },
+    ],
+  },
 
   // ─── IMAGE MODELS ────────────────────────────────────────────────────────────
   {
