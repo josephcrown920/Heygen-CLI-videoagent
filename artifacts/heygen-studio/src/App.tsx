@@ -17,6 +17,7 @@ import { ScenesProps } from "@/pages/ScenesProps";
 import { Canvas } from "@/pages/Canvas";
 import { Lyrics } from "@/pages/Lyrics";
 import { LiveAvatar } from "@/pages/LiveAvatar";
+import { SIDirector } from "@/pages/SIDirector";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ function Router() {
         <Route path="/canvas" component={Canvas} />
         <Route path="/lyrics" component={Lyrics} />
         <Route path="/live-avatar" component={LiveAvatar} />
+        <Route path="/si-director" component={SIDirector} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

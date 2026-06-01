@@ -16,6 +16,7 @@ import {
   Music,
   Radio,
   PenLine,
+  Brain,
 } from "lucide-react";
 import {
   useGetCredits,
@@ -49,6 +50,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { name: "Director Suite", href: "/create", icon: Clapperboard, exact: true },
         { name: "Magic Prompt", href: "/create/prompt", icon: Wand2 },
         { name: "LiveAvatar", href: "/live-avatar", icon: Radio },
+      ],
+    },
+    {
+      label: "Synthetic Intelligence",
+      items: [
+        { name: "SI Director", href: "/si-director", icon: Brain },
       ],
     },
     {
