@@ -6,7 +6,10 @@ import {
   Library, 
   Wand2, 
   Coins,
-  Video
+  Video,
+  Layers,
+  Cpu,
+  ImageIcon,
 } from "lucide-react";
 import { 
   useGetCredits,
@@ -21,12 +24,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
   });
 
-  const navigation = [
+  const heygenNav = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Library", href: "/videos", icon: Library },
     { name: "Director Suite", href: "/create", icon: Clapperboard },
     { name: "Magic Prompt", href: "/create/prompt", icon: Wand2 },
   ];
+
+  const falNav = [
+    { name: "Model Hub", href: "/models", icon: Cpu },
+    { name: "My Creations", href: "/creations", icon: Layers },
+  ];
+
+  const isActive = (href: string) =>
+    href === "/" ? location === "/" : location.startsWith(href);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
@@ -41,23 +52,73 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
-        <div className="flex-1 py-6 px-4 flex flex-col gap-1 overflow-y-auto">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
-            Workspace
+        <div className="flex-1 py-4 px-4 flex flex-col gap-1 overflow-y-auto">
+          {/* HeyGen section */}
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2 mt-2">
+            HeyGen
           </div>
-          {navigation.map((item) => {
-            const isActive = location === item.href;
+          {heygenNav.map((item) => {
+            const active = isActive(item.href);
             return (
-              <Link 
-                key={item.href} 
+              <Link
+                key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 ${
-                  isActive 
-                    ? "bg-primary text-primary-foreground font-medium shadow-md shadow-primary/20" 
+                  active
+                    ? "bg-primary text-primary-foreground font-medium shadow-md shadow-primary/20"
                     : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
               >
                 <item.icon className="w-4 h-4" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+
+          {/* fal.ai section */}
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2 mt-6">
+            fal.ai Models
+          </div>
+          {falNav.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 ${
+                  active
+                    ? "bg-primary text-primary-foreground font-medium shadow-md shadow-primary/20"
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                <item.icon className="w-4 h-4" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+
+          {/* Quick model links */}
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2 mt-6">
+            Quick Generate
+          </div>
+          {[
+            { name: "Kling Nano", href: "/generate/fal-ai%2Fkling-video%2Fv1.6%2Fnano%2Ftext-to-video", icon: Video },
+            { name: "Seedance 1.0", href: "/generate/fal-ai%2Fseedance-1-0%2Ftext-to-video", icon: Video },
+            { name: "Seedream 3.0", href: "/generate/fal-ai%2Fseedream-3", icon: ImageIcon },
+            { name: "FLUX Schnell", href: "/generate/fal-ai%2Fflux%2Fschnell", icon: ImageIcon },
+          ].map((item) => {
+            const active = location === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 text-sm ${
+                  active
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                <item.icon className="w-3.5 h-3.5" />
                 <span>{item.name}</span>
               </Link>
             );
@@ -68,10 +129,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className="bg-card rounded-lg p-4 border border-card-border shadow-sm flex flex-col gap-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground flex items-center gap-1.5">
-                <Coins className="w-4 h-4" /> Credits
+                <Coins className="w-4 h-4" /> HeyGen Credits
               </span>
               <span className="font-bold text-foreground">
-                {credits?.remaining_credits ?? "-"}
+                {credits?.remaining_credits ?? "—"}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">

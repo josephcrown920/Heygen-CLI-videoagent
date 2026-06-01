@@ -8,6 +8,9 @@ import { Dashboard } from "@/pages/Dashboard";
 import { VideoLibrary } from "@/pages/VideoLibrary";
 import { CreateVideo } from "@/pages/CreateVideo";
 import { CreateFromPrompt } from "@/pages/CreateFromPrompt";
+import { ModelHub } from "@/pages/ModelHub";
+import { GenerationStudio } from "@/pages/GenerationStudio";
+import { Creations } from "@/pages/Creations";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +29,9 @@ function Router() {
         <Route path="/videos" component={VideoLibrary} />
         <Route path="/create" component={CreateVideo} />
         <Route path="/create/prompt" component={CreateFromPrompt} />
+        <Route path="/models" component={ModelHub} />
+        <Route path="/generate/:modelId" component={GenerationStudio} />
+        <Route path="/creations" component={Creations} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
