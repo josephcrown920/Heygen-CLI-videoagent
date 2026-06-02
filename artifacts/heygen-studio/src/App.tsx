@@ -18,6 +18,10 @@ import { Canvas } from "@/pages/Canvas";
 import { Lyrics } from "@/pages/Lyrics";
 import { LiveAvatar } from "@/pages/LiveAvatar";
 import { SIDirector } from "@/pages/SIDirector";
+import { AvatarShots } from "@/pages/AvatarShots";
+import { UrbanCuts } from "@/pages/UrbanCuts";
+import { LipSync } from "@/pages/LipSync";
+import { AppLibrary } from "@/pages/AppLibrary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +50,10 @@ function Router() {
         <Route path="/lyrics" component={Lyrics} />
         <Route path="/live-avatar" component={LiveAvatar} />
         <Route path="/si-director" component={SIDirector} />
+        <Route path="/avatar-shots" component={AvatarShots} />
+        <Route path="/urban-cuts" component={UrbanCuts} />
+        <Route path="/lip-sync" component={LipSync} />
+        <Route path="/apps" component={AppLibrary} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

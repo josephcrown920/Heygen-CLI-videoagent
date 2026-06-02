@@ -17,6 +17,10 @@ import {
   Radio,
   PenLine,
   Brain,
+  Scissors,
+  Mic,
+  AppWindow,
+  Camera,
 } from "lucide-react";
 import {
   useGetCredits,
@@ -28,6 +32,7 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   exact?: boolean;
+  badge?: string;
 }
 
 interface NavSection {
@@ -50,12 +55,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { name: "Director Suite", href: "/create", icon: Clapperboard, exact: true },
         { name: "Magic Prompt", href: "/create/prompt", icon: Wand2 },
         { name: "LiveAvatar", href: "/live-avatar", icon: Radio },
+        { name: "App Library", href: "/apps", icon: AppWindow },
       ],
     },
     {
       label: "Synthetic Intelligence",
       items: [
-        { name: "SI Director", href: "/si-director", icon: Brain },
+        { name: "SI Director", href: "/si-director", icon: Brain, badge: "SI" },
+      ],
+    },
+    {
+      label: "Create",
+      items: [
+        { name: "Avatar Shots", href: "/avatar-shots", icon: Camera, badge: "NEW" },
+        { name: "Urban Cuts", href: "/urban-cuts", icon: Scissors, badge: "NEW" },
+        { name: "Lip Sync", href: "/lip-sync", icon: Mic, badge: "NEW" },
+        { name: "Lyrics Video", href: "/lyrics", icon: Music },
       ],
     },
     {
@@ -71,7 +86,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { name: "Canvas", href: "/canvas", icon: PenLine },
         { name: "Scenes & Props", href: "/scenes", icon: Palette },
         { name: "Reference Images", href: "/references", icon: BookImage },
-        { name: "Lyrics", href: "/lyrics", icon: Music },
         { name: "CLI Generator", href: "/cli", icon: Terminal },
       ],
     },
@@ -79,10 +93,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       label: "Quick Generate",
       items: [
         { name: "Kling Nano", href: "/generate/fal-ai%2Fkling-video%2Fv1.6%2Fnano%2Ftext-to-video", icon: Video },
-        { name: "LTX-Video", href: "/generate/fal-ai%2Fltx-video", icon: Video },
         { name: "Seedance 1.0", href: "/generate/fal-ai%2Fseedance-1-0%2Ftext-to-video", icon: Video },
-        { name: "Seedream 3.0", href: "/generate/fal-ai%2Fseedream-3", icon: ImageIcon },
         { name: "FLUX Schnell", href: "/generate/fal-ai%2Fflux%2Fschnell", icon: ImageIcon },
+        { name: "Imagen 4", href: "/generate/fal-ai%2Fimagen4%2Fpreview", icon: ImageIcon },
       ],
     },
   ];
@@ -90,6 +103,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return location === href;
     return location.startsWith(href);
+  };
+
+  const badgeColors: Record<string, string> = {
+    SI: "bg-violet-500/20 text-violet-400",
+    NEW: "bg-primary/20 text-primary",
   };
 
   return (
@@ -124,7 +142,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     }`}
                   >
                     <item.icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{item.name}</span>
+                    <span className="truncate flex-1">{item.name}</span>
+                    {item.badge && !active && (
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${badgeColors[item.badge] ?? "bg-muted text-muted-foreground"}`}>
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
