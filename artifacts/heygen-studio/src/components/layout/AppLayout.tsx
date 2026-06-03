@@ -21,6 +21,7 @@ import {
   Mic,
   AppWindow,
   Camera,
+  FlameKindling,
 } from "lucide-react";
 import {
   useGetCredits,
@@ -67,6 +68,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     {
       label: "Create",
       items: [
+        { name: "Viral Engine", href: "/viral-engine", icon: FlameKindling, badge: "NEW" },
         { name: "Avatar Shots", href: "/avatar-shots", icon: Camera, badge: "NEW" },
         { name: "Urban Cuts", href: "/urban-cuts", icon: Scissors, badge: "NEW" },
         { name: "Lip Sync", href: "/lip-sync", icon: Mic, badge: "NEW" },

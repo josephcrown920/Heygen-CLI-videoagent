@@ -1,4 +1,5 @@
 - [HeyGen Studio architecture](heygen-studio-arch.md) — monorepo: api-server (Express, PORT env), heygen-studio (Vite/React), shared lib/api-client-react codegen via Orval from openapi.yaml
-- [fal.ai proxy routes](fal-routes.md) — POST /fal/submit + GET /fal/status; async queue pattern; FAL_API_KEY secret not yet set; all model IDs in lib/models.ts
-- [Feature set built](feature-set.md) — Canvas, CLI, References, Scenes&Props, Lyrics, LiveAvatar, ModelHub, Creations, SIDirector all wired into AppLayout nav and App.tsx routes
+- [fal.ai proxy routes](fal-routes.md) — POST /fal/submit + GET /fal/status; async queue pattern; FAL_API_KEY secret set; all model IDs in lib/models.ts
+- [Feature set built](feature-set.md) — Dashboard, AvatarShots, UrbanCuts, LipSync, AppLibrary, ViralEngine, Canvas, CLI, References, Scenes&Props, Lyrics, LiveAvatar, ModelHub, Creations, SIDirector all wired into AppLayout nav and App.tsx routes
 - [SI Director](si-director.md) — POST /api/si/plan uses OPENAI_API_KEY + gpt-4o with JSON mode; plans full production (title, shots, model selection, narrative arc); openai npm pkg installed in api-server
+- [Viral Engine page](viral-engine.md) — /viral-engine; full Python hooks engine ported to TS; 8 angles × tech/music vocab; Kling+Seedance prompt templates; model picker (kling-master/nano, seedance, flux-schnell); fires via BASE_URL+/api/fal/submit, polls /api/fal/status every 3s, renders video/image inline

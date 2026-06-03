@@ -1,0 +1,14 @@
+Feature,Added?,How It Works
+Music Mode,✅,"`--category music` — beatmaker vocabulary, studio prompts"
+Fashion Mode,✅,"`--category fashion` — styling vocabulary, outfit prompts"
+TikTok API Integration,✅,"`tiktok_integration.py` — upload, schedule, analytics"
+Auto-Publishing,✅,"`--auto-publish` + `--schedule ""3_per_day""`"
+Manual Upload Package,✅,Generates organized folder with captions.txt for copy-paste
+Posting Schedule Generator,✅,"Auto-calculates best times (9am, 12pm, 3pm, 6pm, 9pm)"
+Analytics Tracking,✅,"Pulls TikTok views/likes/shares, updates CSV"
+Deployment Manual,✅,12KB step-by-step guide with all methods
+Deployment Checklist,✅,Printable checklist with emergency procedures
+Cloud Deployment,✅,"AWS EC2, Google Cloud Run, Docker, Raspberry Pi guides"
+Third-Party Tools,✅,"Metricool, Later, Hootsuite, SocialPilot integration"
+Troubleshooting,✅,"Character drift, rate limits, low engagement fixes"
+Webhook/Airtable,✅,Code snippets for real-time notifications

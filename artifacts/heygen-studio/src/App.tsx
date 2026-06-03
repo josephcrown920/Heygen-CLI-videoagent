@@ -22,6 +22,7 @@ import { AvatarShots } from "@/pages/AvatarShots";
 import { UrbanCuts } from "@/pages/UrbanCuts";
 import { LipSync } from "@/pages/LipSync";
 import { AppLibrary } from "@/pages/AppLibrary";
+import { ViralEngine } from "@/pages/ViralEngine";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,7 @@ function Router() {
         <Route path="/urban-cuts" component={UrbanCuts} />
         <Route path="/lip-sync" component={LipSync} />
         <Route path="/apps" component={AppLibrary} />
+        <Route path="/viral-engine" component={ViralEngine} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
