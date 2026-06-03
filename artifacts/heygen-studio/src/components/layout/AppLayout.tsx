@@ -26,6 +26,21 @@ import {
   Menu,
   X,
 } from "lucide-react";
+
+function RegentLogo({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <defs>
+        <linearGradient id="rgrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#3b82f6"/>
+          <stop offset="100%" stopColor="#ef4444"/>
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="7" fill="url(#rgrad)"/>
+      <text x="7" y="24" fontFamily="Inter,Arial,sans-serif" fontWeight="800" fontSize="20" fill="white">R</text>
+    </svg>
+  );
+}
 import {
   useGetCredits,
   getGetCreditsQueryKey
@@ -202,9 +217,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <aside className="hidden md:flex w-56 lg:w-64 border-r border-sidebar-border bg-sidebar flex-col flex-shrink-0">
         <div className="h-14 flex items-center px-4 border-b border-sidebar-border flex-shrink-0">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-primary/10 text-primary p-1.5 rounded-lg group-hover:bg-primary/20 transition-colors">
-              <Video className="w-4 h-4" />
-            </div>
+            <RegentLogo size={28} />
             <span className="font-bold text-base tracking-tight">Regent</span>
           </Link>
         </div>
@@ -227,9 +240,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       >
         <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border flex-shrink-0">
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
-              <Video className="w-4 h-4" />
-            </div>
+            <RegentLogo size={26} />
             <span className="font-bold text-base tracking-tight">Regent</span>
           </Link>
           <button
@@ -254,9 +265,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Menu className="w-5 h-5" />
           </button>
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
-              <Video className="w-4 h-4" />
-            </div>
+            <RegentLogo size={24} />
             <span className="font-bold text-sm tracking-tight">Regent</span>
           </Link>
         </div>
