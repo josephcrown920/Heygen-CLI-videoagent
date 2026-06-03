@@ -101,8 +101,64 @@ export function Dashboard() {
     <div className="flex flex-col min-h-full bg-background">
 
       {/* ── Hero ── */}
-      <div className="relative px-4 sm:px-8 lg:px-10 pt-8 sm:pt-12 pb-6 sm:pb-10 flex flex-col items-center text-center">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+      <div className="relative px-4 sm:px-8 lg:px-10 pt-8 sm:pt-12 pb-6 sm:pb-10 flex flex-col items-center text-center overflow-hidden">
+
+        {/* Cinematic light beams — blue left, red right */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Blue beam — left */}
+          <div
+            className="absolute"
+            style={{
+              top: "-30%",
+              left: "5%",
+              width: "45%",
+              height: "110%",
+              background: "radial-gradient(ellipse at top, rgba(59,130,246,0.45) 0%, rgba(59,130,246,0.12) 45%, transparent 75%)",
+              transform: "rotate(-10deg)",
+              filter: "blur(24px)",
+            }}
+          />
+          {/* Red beam — right */}
+          <div
+            className="absolute"
+            style={{
+              top: "-30%",
+              right: "3%",
+              width: "45%",
+              height: "110%",
+              background: "radial-gradient(ellipse at top, rgba(239,68,68,0.42) 0%, rgba(239,68,68,0.11) 45%, transparent 75%)",
+              transform: "rotate(10deg)",
+              filter: "blur(24px)",
+            }}
+          />
+          {/* Centre overlap — warm merge glow */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2"
+            style={{
+              top: "-15%",
+              width: "55%",
+              height: "75%",
+              background: "radial-gradient(ellipse at top, rgba(180,80,120,0.18) 0%, transparent 65%)",
+              filter: "blur(28px)",
+            }}
+          />
+          {/* Stage light source — thin bright bar at top edge */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2"
+            style={{
+              top: 0,
+              width: "260px",
+              height: "3px",
+              background: "linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.9) 30%, rgba(255,255,255,0.7) 50%, rgba(239,68,68,0.9) 70%, transparent 100%)",
+              filter: "blur(2px)",
+            }}
+          />
+          {/* Floor fade — prevent beams from bleeding into cards */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-24"
+            style={{ background: "linear-gradient(to bottom, transparent, hsl(222 25% 4%))" }}
+          />
+        </div>
 
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-1.5 sm:mb-2 relative">
           Say it with video
