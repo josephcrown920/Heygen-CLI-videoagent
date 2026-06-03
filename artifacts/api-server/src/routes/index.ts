@@ -4,6 +4,7 @@ import heygenRouter from "./heygen";
 import falRouter from "./fal";
 import klingRouter from "./kling";
 import siDirectorRouter from "./si-director";
+import hfRouter from "./hf";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(heygenRouter);
 router.use(falRouter);
 router.use(klingRouter);
 router.use(siDirectorRouter);
+router.use(hfRouter);
 
 export default router;

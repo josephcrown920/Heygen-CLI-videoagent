@@ -23,6 +23,7 @@ import { UrbanCuts } from "@/pages/UrbanCuts";
 import { LipSync } from "@/pages/LipSync";
 import { AppLibrary } from "@/pages/AppLibrary";
 import { ViralEngine } from "@/pages/ViralEngine";
+import { GPUHub } from "@/pages/GPUHub";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,7 @@ function Router() {
         <Route path="/lip-sync" component={LipSync} />
         <Route path="/apps" component={AppLibrary} />
         <Route path="/viral-engine" component={ViralEngine} />
+        <Route path="/gpu-hub" component={GPUHub} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

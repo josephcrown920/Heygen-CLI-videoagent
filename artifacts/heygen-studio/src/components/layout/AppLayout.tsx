@@ -22,6 +22,7 @@ import {
   AppWindow,
   Camera,
   FlameKindling,
+  ServerCog,
 } from "lucide-react";
 import {
   useGetCredits,
@@ -73,6 +74,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { name: "Urban Cuts", href: "/urban-cuts", icon: Scissors, badge: "NEW" },
         { name: "Lip Sync", href: "/lip-sync", icon: Mic, badge: "NEW" },
         { name: "Lyrics Video", href: "/lyrics", icon: Music },
+      ],
+    },
+    {
+      label: "Infrastructure",
+      items: [
+        { name: "GPU + AI Hub", href: "/gpu-hub", icon: ServerCog, badge: "NEW" },
       ],
     },
     {

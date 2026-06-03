@@ -1,45 +1,94 @@
-# [Project name]
+# HeyGen Studio
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A full-featured HeyGen Studio clone — AI video production platform with Viral Content Engine, SI Director (OpenAI GPT-4o), fal.ai model generation (Kling, Seedance, FLUX), HuggingFace Inference, Avatar Shots, Urban Cuts, Lip Sync, App Library, GPU Hub, and a HeyGen-style dashboard.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (Express on `PORT` env)
+- `pnpm --filter @workspace/heygen-studio run dev` — run the frontend (Vite/React on `PORT` env)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+
+## Environment Variables (Secrets)
+
+| Secret | Required | Used By | Description |
+|--------|----------|---------|-------------|
+| `FAL_API_KEY` | ✅ Required | `api-server /api/fal/*` | fal.ai API key for Kling, Seedance, FLUX generation |
+| `OPENAI_API_KEY` | ✅ Required | `api-server /api/si/plan` | OpenAI GPT-4o for SI Director production planning |
+| `HUGGINGFACE_TOKEN` | ⚡ Required | `api-server /api/hf/*` | HuggingFace Inference API token (read token from hf.co/settings/tokens) |
+
+### Getting your HuggingFace Token
+1. Go to [hf.co/settings/tokens](https://huggingface.co/settings/tokens)
+2. Create a new token with **Read** permissions
+3. Add it as `HUGGINGFACE_TOKEN` in Replit Secrets
+
+### Getting your fal.ai Key
+1. Go to [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys)
+2. Create an API key
+3. Add it as `FAL_API_KEY` in Replit Secrets
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- **API:** Express 5 (`artifacts/api-server/`)
+- **Frontend:** Vite + React + shadcn/ui (`artifacts/heygen-studio/`)
+- **AI Generation:** fal.ai (`/api/fal/submit`, `/api/fal/status`) — async queue polling
+- **HuggingFace:** `@huggingface/inference` (`/api/hf/text`, `/api/hf/image`, `/api/hf/embed`)
+- **SI Director:** OpenAI GPT-4o JSON mode (`/api/si/plan`)
+- **Validation:** Zod
+- **Build:** esbuild (CJS bundle)
 
-## Where things live
+## Where Things Live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+```
+artifacts/
+  api-server/src/routes/
+    fal.ts          — POST /fal/submit, GET /fal/status (async queue)
+    hf.ts           — POST /hf/text, /hf/image, /hf/embed + GET /hf/models
+    si-director.ts  — POST /si/plan (GPT-4o production planner)
+    kling.ts        — Kling-specific helpers
+    heygen.ts       — HeyGen API proxy
 
-## Architecture decisions
+  heygen-studio/src/pages/
+    Dashboard.tsx      — "Say it with video" hero landing
+    ViralEngine.tsx    — 300+ hooks × Kling/Seedance → fal.ai fire + Campaign Export
+    GPUHub.tsx         — AI Orchestration Hub (HF live inference + provider dashboard)
+    SIDirector.tsx     — GPT-4o production director
+    AvatarShots.tsx    — Avatar video shots
+    UrbanCuts.tsx      — Urban scene video generator
+    LipSync.tsx        — Lip sync tool
+    AppLibrary.tsx     — App marketplace
+    Canvas.tsx         — Drawing canvas
+    Creations.tsx      — Generated video library
+    ModelHub.tsx       — fal.ai model browser
+```
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+## Architecture Decisions
 
-## Product
+- **fal.ai async queue pattern:** Frontend fires `POST /api/fal/submit` → gets `request_id`, then polls `GET /api/fal/status?model_id=...&request_id=...` every 3s until COMPLETED. All video/image models go through this single pipeline.
+- **BASE_URL pattern:** Frontend uses `import.meta.env.BASE_URL?.replace(/\/$/, "")` to prefix all API calls — required for Replit's path-based proxy routing.
+- **HuggingFace returns base64:** `/api/hf/image` returns `{ base64, contentType, dataUrl }` so the frontend can render without a CDN URL.
+- **Viral Engine is fully client-side:** All hook generation and vocab substitution runs in the browser — only the fal.ai submit call hits the server.
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+## Pages & Routes
 
-## User preferences
+| Path | Page | Description |
+|------|------|-------------|
+| `/` | Dashboard | HeyGen-style hero with prompt box and feature grid |
+| `/viral-engine` | Viral Engine | 8 angles × 300+ hooks + Kling/Seedance video generation + Campaign Export |
+| `/gpu-hub` | GPU + AI Hub | AI orchestration dashboard — HuggingFace live inference + provider overview |
+| `/si-director` | SI Director | GPT-4o multi-shot production planner |
+| `/avatar-shots` | Avatar Shots | AI avatar video generator |
+| `/urban-cuts` | Urban Cuts | Urban scene video cuts |
+| `/lip-sync` | Lip Sync | Video lip sync tool |
+| `/apps` | App Library | App marketplace with category filters |
+| `/canvas` | Canvas | Creative canvas |
+| `/creations` | Creations | Generated content library |
+| `/models` | Model Hub | fal.ai model browser |
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+## User Preferences
 
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Dark theme, HeyGen-style UI (deep dark backgrounds, purple primary, clean card layout)
+- All new pages use consistent nav badge system: NEW badge (primary color), SI badge (violet)
+- pnpm only — no npm or yarn

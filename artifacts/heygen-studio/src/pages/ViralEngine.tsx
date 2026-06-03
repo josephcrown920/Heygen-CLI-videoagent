@@ -5,9 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Zap, RefreshCw, Play, Copy, Check, Loader2,
+  Zap, RefreshCw, Copy, Check, Loader2,
   ChevronRight, Sparkles, Video, Image as ImageIcon,
-  FlameKindling, Music, Cpu, Download,
+  FlameKindling, Music, Cpu, Download, FileJson, FileText,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -653,14 +653,94 @@ export function ViralEngine() {
             </div>
           )}
 
-          {/* Campaign summary */}
+          {/* Campaign summary + export */}
           {selectedHook && videoPrompt && (
             <div className="bg-muted/30 border border-border rounded-2xl p-4 flex flex-col gap-3 text-sm">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Campaign Summary</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Campaign Summary</p>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => {
+                      const platforms = ["TikTok", "Instagram Reels", "YouTube Shorts", "X"];
+                      const hashtags = category === "tech"
+                        ? ["#TechTok", "#DeskSetup", "#WorkFromHome", "#GadgetReview", "#TechReview"]
+                        : ["#MusicProducer", "#BeatMaker", "#HomeStudio", "#MusicGear", "#ProducerLife"];
+                      const cta = pick(["Link in bio 👆", "Comment below ⬇️", "Follow for more 🔥", "Save this 📌", "Drop a ❤️ if this hits"]);
+                      const pkg = {
+                        generated_at: new Date().toISOString(),
+                        product,
+                        category,
+                        hook_angle: angle,
+                        hook: selectedHook,
+                        cta,
+                        hashtags,
+                        video_prompt: videoPrompt,
+                        model: model.falId,
+                        duration_seconds: duration,
+                        platforms,
+                        all_hooks: hooks,
+                      };
+                      const blob = new Blob([JSON.stringify(pkg, null, 2)], { type: "application/json" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url; a.download = `campaign-${product.replace(/\s+/g, "-").toLowerCase()}.json`;
+                      a.click(); URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-1 text-xs border border-border rounded-lg px-2.5 py-1.5 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  >
+                    <FileJson className="w-3 h-3" /> JSON
+                  </button>
+                  <button
+                    onClick={() => {
+                      const hashtags = category === "tech"
+                        ? "#TechTok #DeskSetup #WorkFromHome #GadgetReview #TechReview"
+                        : "#MusicProducer #BeatMaker #HomeStudio #MusicGear #ProducerLife";
+                      const cta = pick(["Link in bio 👆", "Comment below ⬇️", "Follow for more 🔥", "Save this 📌"]);
+                      const rows = [
+                        ["Field", "Value"],
+                        ["Product", product],
+                        ["Category", category],
+                        ["Hook Angle", angle],
+                        ["Hook", `"${selectedHook}"`],
+                        ["CTA", cta],
+                        ["Hashtags", hashtags],
+                        ["Video Prompt", `"${videoPrompt}"`],
+                        ["Model", model.falId],
+                        ["Duration", `${duration}s`],
+                        ["Platforms", "TikTok,Instagram Reels,YouTube Shorts,X"],
+                        ...hooks.map((h, i) => [`Hook ${i + 1}`, `"${h}"`]),
+                      ];
+                      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+                      const blob = new Blob([csv], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url; a.download = `campaign-${product.replace(/\s+/g, "-").toLowerCase()}.csv`;
+                      a.click(); URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-1 text-xs border border-border rounded-lg px-2.5 py-1.5 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  >
+                    <FileText className="w-3 h-3" /> CSV
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
                   <span className="text-muted-foreground w-20 flex-shrink-0 text-xs">Hook</span>
                   <span className="text-xs italic">"{selectedHook}"</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-20 flex-shrink-0 text-xs">Platforms</span>
+                  <div className="flex flex-wrap gap-1">
+                    {["TikTok", "Reels", "Shorts", "X"].map(p => (
+                      <span key={p} className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-primary/20 text-primary/80 bg-primary/5">{p}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-20 flex-shrink-0 text-xs">Tags</span>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {category === "tech" ? "#TechTok #DeskSetup #GadgetReview" : "#MusicProducer #BeatMaker #HomeStudio"}
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-muted-foreground w-20 flex-shrink-0 text-xs">Model</span>
