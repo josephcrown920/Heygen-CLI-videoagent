@@ -175,16 +175,16 @@ export function LiveAvatarPlayer({ token, avatarId, voiceId }) {
 }`;
 
 const MIGRATION_CHECKLIST = [
-  { id: "1", label: "Get HeyGen API key from dashboard", done: false },
-  { id: "2", label: "Choose a compatible avatar from HeyGen library", done: false },
+  { id: "1", label: "Get Regent API key from dashboard", done: false },
+  { id: "2", label: "Choose a compatible avatar from Regent library", done: false },
   { id: "3", label: "Generate access token (POST /v1/streaming.create_token)", done: false },
-  { id: "4", label: "Set up WebRTC signaling with HeyGen SDP offer", done: false },
+  { id: "4", label: "Set up WebRTC signaling with Regent SDP offer", done: false },
   { id: "5", label: "Bind avatar stream to <video> element", done: false },
   { id: "6", label: "Implement speak() for real-time TTS", done: false },
   { id: "7", label: "Add interrupt support (avatar.interrupt())", done: false },
   { id: "8", label: "Handle stream disconnect + reconnect", done: false },
   { id: "9", label: "Test with different voices and languages", done: false },
-  { id: "10", label: "Deploy and monitor via HeyGen usage dashboard", done: false },
+  { id: "10", label: "Deploy and monitor via Regent usage dashboard", done: false },
 ];
 
 export function LiveAvatar() {
@@ -210,7 +210,7 @@ export function LiveAvatar() {
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">LiveAvatar</h1>
-            <p className="text-muted-foreground text-sm">Real-time streaming avatars powered by HeyGen WebRTC</p>
+            <p className="text-muted-foreground text-sm">Real-time streaming avatars powered by Regent WebRTC</p>
           </div>
           <Badge variant="outline" className="ml-auto border-green-500/30 text-green-400 text-xs">
             <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5 animate-pulse" />

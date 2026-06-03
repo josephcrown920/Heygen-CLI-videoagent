@@ -35,7 +35,7 @@ interface LyricSheet {
   updated_at: number;
 }
 
-const STORAGE_KEY = "heygen_lyrics";
+const STORAGE_KEY = "regent_lyrics";
 
 function loadSheets(): LyricSheet[] {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
@@ -275,7 +275,7 @@ export function Lyrics() {
   const copyAsScript = async () => {
     if (!openSheet) return;
     await navigator.clipboard.writeText(lyricsToScript(openSheet));
-    toast({ title: "Copied as HeyGen script", description: "Paste into Director Suite or Magic Prompt." });
+    toast({ title: "Copied as Regent script", description: "Paste into Director Suite or Magic Prompt." });
   };
 
   const downloadSRT = () => {
@@ -359,7 +359,7 @@ export function Lyrics() {
         {/* Script preview */}
         <div className="bg-muted/30 border border-border rounded-xl p-4">
           <p className="text-xs font-semibold mb-2 flex items-center gap-2">
-            <Mic className="w-3.5 h-3.5 text-primary" /> HeyGen Script Preview
+            <Mic className="w-3.5 h-3.5 text-primary" /> Regent Script Preview
           </p>
           <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
             {lyricsToScript(openSheet) || "Add some lyrics above…"}
@@ -394,7 +394,7 @@ export function Lyrics() {
           <Music className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">No lyrics yet</h2>
           <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-6">
-            Create your first lyric sheet. Paste in existing lyrics or write from scratch, then time-sync and export as SRT or HeyGen avatar scripts.
+            Create your first lyric sheet. Paste in existing lyrics or write from scratch, then time-sync and export as SRT or Regent avatar scripts.
           </p>
           <Button onClick={() => setNewDialog(true)}>
             <Plus className="w-4 h-4 mr-2" /> Create Lyric Sheet
@@ -419,7 +419,7 @@ export function Lyrics() {
           {[
             { icon: "📝", title: "Write & Edit", desc: "Create lyric sheets with line-by-line editing and director notes." },
             { icon: "⏱️", title: "Time-Sync", desc: "Add start/end timestamps to each line for SRT subtitle export." },
-            { icon: "🎙️", title: "Avatar Scripts", desc: "Copy lyrics as a formatted script for HeyGen Director Suite or Magic Prompt." },
+            { icon: "🎙️", title: "Avatar Scripts", desc: "Copy lyrics as a formatted script for Regent Director Suite or Magic Prompt." },
           ].map(c => (
             <div key={c.title} className="bg-card border border-card-border rounded-xl p-5 text-center">
               <div className="text-3xl mb-3">{c.icon}</div>

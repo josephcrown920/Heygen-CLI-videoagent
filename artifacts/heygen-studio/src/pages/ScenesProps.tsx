@@ -65,7 +65,7 @@ const BUILTIN_SCENES: ScenePreset[] = [
   { id: "prop-gym", name: "Gym Equipment", category: "prop", emoji: "🏋️", description: "Gym weights and fitness equipment for workout content.", promptFragment: "gym setting with weights and fitness equipment, workout environment, athletic studio", tags: ["gym", "fitness", "workout"] },
 ];
 
-const STORAGE_KEY = "heygen_scene_presets";
+const STORAGE_KEY = "regent_scene_presets";
 
 function loadCustom(): ScenePreset[] {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }

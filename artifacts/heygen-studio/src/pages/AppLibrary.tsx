@@ -198,7 +198,7 @@ export function AppLibrary() {
       {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight">App Library</h1>
-        <p className="text-sm text-muted-foreground">Use HeyGen Studio apps to up-level your creative process</p>
+        <p className="text-sm text-muted-foreground">Use Regent apps to up-level your creative process</p>
       </div>
 
       {/* Featured */}

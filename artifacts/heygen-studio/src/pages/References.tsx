@@ -23,7 +23,7 @@ export interface ReferenceImage {
   created_at: number;
 }
 
-const STORAGE_KEY = "heygen_reference_images";
+const STORAGE_KEY = "regent_reference_images";
 
 function loadRefs(): ReferenceImage[] {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }

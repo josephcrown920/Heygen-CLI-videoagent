@@ -13,7 +13,7 @@ export interface Creation {
   error?: string;
 }
 
-const STORAGE_KEY = "heygen_studio_creations";
+const STORAGE_KEY = "regent_creations";
 
 function load(): Creation[] {
   try {

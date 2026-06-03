@@ -46,7 +46,7 @@ interface NavSection {
 
 const sections: NavSection[] = [
   {
-    label: "HeyGen",
+    label: "Regent",
     items: [
       { name: "Dashboard", href: "/", icon: LayoutDashboard, exact: true },
       { name: "Library", href: "/videos", icon: Library },
@@ -162,7 +162,7 @@ function SidebarContent({
       <div className="p-3 border-t border-sidebar-border flex-shrink-0">
         <div className="bg-card rounded-lg p-2.5 border border-card-border flex items-center gap-2">
           <Coins className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-xs text-muted-foreground flex-1 truncate">HeyGen Credits</span>
+          <span className="text-xs text-muted-foreground flex-1 truncate">Regent Credits</span>
           <span className="font-bold text-sm text-foreground flex-shrink-0">
             {credits?.remaining_credits ?? "—"}
           </span>
@@ -205,7 +205,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="bg-primary/10 text-primary p-1.5 rounded-lg group-hover:bg-primary/20 transition-colors">
               <Video className="w-4 h-4" />
             </div>
-            <span className="font-bold text-base tracking-tight">HeyGen Studio</span>
+            <span className="font-bold text-base tracking-tight">Regent</span>
           </Link>
         </div>
         <SidebarContent location={location} credits={credits} />
@@ -230,7 +230,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
               <Video className="w-4 h-4" />
             </div>
-            <span className="font-bold text-base tracking-tight">HeyGen Studio</span>
+            <span className="font-bold text-base tracking-tight">Regent</span>
           </Link>
           <button
             onClick={() => setDrawerOpen(false)}
@@ -257,7 +257,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
               <Video className="w-4 h-4" />
             </div>
-            <span className="font-bold text-sm tracking-tight">HeyGen Studio</span>
+            <span className="font-bold text-sm tracking-tight">Regent</span>
           </Link>
         </div>
 

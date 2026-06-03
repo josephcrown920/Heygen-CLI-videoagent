@@ -108,7 +108,7 @@ export function Dashboard() {
           Say it with video
         </h1>
         <p className="text-muted-foreground text-sm sm:text-base mb-5 sm:mb-8 relative max-w-sm sm:max-w-none">
-          HeyGen Studio's all-in-one SI agent for video creation.
+          Regent's all-in-one SI agent for video creation.
         </p>
 
         {/* Prompt box */}

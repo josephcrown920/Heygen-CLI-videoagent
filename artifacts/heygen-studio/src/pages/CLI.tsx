@@ -21,7 +21,7 @@ interface Config {
 
 const PLATFORM_META: Record<Platform, { label: string; color: string; tag: string; desc: string }> = {
   fal: { label: "fal.ai", color: "#a855f7", tag: "SERVERLESS", desc: "Fastest GPU inference. Pay per request, no idle cost." },
-  heygen: { label: "HeyGen API", color: "#3b82f6", tag: "MANAGED", desc: "Managed avatar video API with credits-based billing." },
+  heygen: { label: "Regent API", color: "#3b82f6", tag: "MANAGED", desc: "Managed avatar video API with credits-based billing." },
   modal: { label: "Modal.com", color: "#4ade80", tag: "A100/H100", desc: "Serverless GPU functions. Pythonic deploy in seconds." },
   runpod: { label: "RunPod", color: "#f59e0b", tag: "PODS", desc: "Custom GPU pods via REST. Any container, any model." },
 };
@@ -29,8 +29,8 @@ const PLATFORM_META: Record<Platform, { label: string; color: string; tag: strin
 const WORKLOAD_MODELS: Record<Workload, string[]> = {
   "text-to-image": ["fal-ai/flux-pro/v1.1", "fal-ai/flux/schnell", "fal-ai/seedream-3", "fal-ai/recraft-v3", "fal-ai/ideogram/v3"],
   "text-to-video": ["fal-ai/kling-video/v2.1/master/text-to-video", "fal-ai/ltx-video", "fal-ai/seedance-1-0/text-to-video", "fal-ai/hunyuan-video", "fal-ai/wan/v2.1/1.3b/text-to-video"],
-  "avatar-video": ["HeyGen Director Suite", "HeyGen Magic Prompt"],
-  "magic-prompt": ["HeyGen Magic Prompt"],
+  "avatar-video": ["Regent Director Suite", "Regent Magic Prompt"],
+  "magic-prompt": ["Regent Magic Prompt"],
   custom: ["custom/model-id"],
 };
 
@@ -369,8 +369,8 @@ export function CLI() {
               <SelectContent>
                 <SelectItem value="text-to-image">Text-to-Image</SelectItem>
                 <SelectItem value="text-to-video">Text-to-Video</SelectItem>
-                <SelectItem value="avatar-video">Avatar Video (HeyGen)</SelectItem>
-                <SelectItem value="magic-prompt">Magic Prompt (HeyGen)</SelectItem>
+                <SelectItem value="avatar-video">Avatar Video (Regent)</SelectItem>
+                <SelectItem value="magic-prompt">Magic Prompt (Regent)</SelectItem>
                 <SelectItem value="custom">Custom</SelectItem>
               </SelectContent>
             </Select>
