@@ -64,16 +64,17 @@ const GPU_PLATFORMS = [
 
 // ─── HF INFERENCE UI ───
 const HF_TEXT_MODELS = [
-  "mistralai/Mistral-7B-Instruct-v0.3",
-  "meta-llama/Meta-Llama-3-8B-Instruct",
-  "HuggingFaceH4/zephyr-7b-beta",
-  "microsoft/Phi-3-mini-4k-instruct",
+  { id: "gpt-4o-mini", label: "GPT-4o Mini (fast)" },
+  { id: "gpt-4o", label: "GPT-4o (powerful)" },
+  { id: "meta-llama/Llama-3.1-8B-Instruct", label: "Llama 3.1 8B → gpt-4o-mini" },
+  { id: "HuggingFaceH4/zephyr-7b-beta", label: "Zephyr 7B → gpt-4o-mini" },
+  { id: "microsoft/Phi-3-mini-4k-instruct", label: "Phi-3 Mini → gpt-4o-mini" },
 ];
 
 const HF_IMAGE_MODELS = [
-  "black-forest-labs/FLUX.1-schnell",
-  "stabilityai/stable-diffusion-xl-base-1.0",
-  "runwayml/stable-diffusion-v1-5",
+  { id: "fal-ai/flux/schnell", label: "FLUX Schnell (fal.ai)" },
+  { id: "fal-ai/flux-pro/v1.1", label: "FLUX Pro 1.1 (fal.ai)" },
+  { id: "fal-ai/stable-diffusion-v3-medium", label: "SD3 Medium (fal.ai)" },
 ];
 
 export function GPUHub() {
@@ -83,18 +84,19 @@ export function GPUHub() {
   const [copied, setCopied] = useState(false);
 
   // HF text state
-  const [hfTextModel, setHfTextModel] = useState(HF_TEXT_MODELS[0]);
+  const [hfTextModel, setHfTextModel] = useState(HF_TEXT_MODELS[0].id);
   const [hfPrompt, setHfPrompt] = useState("Write a viral hook for a tech product launch.");
   const [hfMaxTokens, setHfMaxTokens] = useState("256");
   const [hfTemp, setHfTemp] = useState("0.8");
   const [hfTextResult, setHfTextResult] = useState("");
   const [hfTextLoading, setHfTextLoading] = useState(false);
 
-  // HF image state
-  const [hfImageModel, setHfImageModel] = useState(HF_IMAGE_MODELS[0]);
+  // fal.ai image state
+  const [hfImageModel, setHfImageModel] = useState(HF_IMAGE_MODELS[0].id);
   const [hfImagePrompt, setHfImagePrompt] = useState("Cinematic product shot, dramatic lighting, 4K");
   const [hfImageResult, setHfImageResult] = useState<string | null>(null);
   const [hfImageLoading, setHfImageLoading] = useState(false);
+  const [hfImageRequestId, setHfImageRequestId] = useState<string | null>(null);
 
   const providers = PROVIDERS[activeTab];
   const tabColor = TAB_COLORS[activeTab];
@@ -142,17 +144,36 @@ export function GPUHub() {
     if (!hfImagePrompt.trim()) return;
     setHfImageLoading(true);
     setHfImageResult(null);
+    setHfImageRequestId(null);
     try {
-      const res = await fetch(`${BASE_URL}/api/hf/image`, {
+      // Submit to fal.ai
+      const submitRes = await fetch(`${BASE_URL}/api/fal/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: hfImageModel, prompt: hfImagePrompt, width: 512, height: 512 }),
+        body: JSON.stringify({ model_id: hfImageModel, inputs: { prompt: hfImagePrompt, image_size: "square_hd" } }),
       });
-      const data = await res.json() as { dataUrl?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "HF error");
-      setHfImageResult(data.dataUrl ?? null);
+      const submitData = await submitRes.json() as { request_id?: string; error?: string };
+      if (!submitRes.ok || submitData.error) throw new Error(submitData.error ?? "fal.ai submit failed");
+      const requestId = submitData.request_id!;
+      setHfImageRequestId(requestId);
+
+      // Poll for result
+      let attempts = 0;
+      while (attempts < 30) {
+        await new Promise(r => setTimeout(r, 2000));
+        const statusRes = await fetch(`${BASE_URL}/api/fal/status?model_id=${encodeURIComponent(hfImageModel)}&request_id=${requestId}`);
+        const statusData = await statusRes.json() as { status?: string; images?: { url: string }[]; error?: string };
+        if (statusData.error) throw new Error(statusData.error);
+        if (statusData.status === "COMPLETED" && statusData.images?.[0]?.url) {
+          setHfImageResult(statusData.images[0].url);
+          break;
+        }
+        if (statusData.status === "FAILED") throw new Error("Image generation failed");
+        attempts++;
+      }
+      if (attempts >= 30) throw new Error("Timed out waiting for image");
     } catch (err) {
-      toast({ title: "HuggingFace Error", description: err instanceof Error ? err.message : "Failed", variant: "destructive" });
+      toast({ title: "Image Generation Error", description: err instanceof Error ? err.message : "Failed", variant: "destructive" });
     } finally {
       setHfImageLoading(false);
     }
@@ -294,10 +315,11 @@ export function GPUHub() {
 
       {/* HuggingFace Live Inference */}
       <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style={{ background: "#fbbf2418", border: "1px solid #fbbf2440" }}>🤗</div>
-          <h2 className="font-semibold">HuggingFace Live Inference</h2>
-          <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-400">HUGGINGFACE_TOKEN required</Badge>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style={{ background: "#10a37f18", border: "1px solid #10a37f40" }}>🧠</div>
+          <h2 className="font-semibold">AI Live Inference</h2>
+          <Badge variant="outline" className="text-[9px] border-green-500/30 text-green-400">OpenAI → text</Badge>
+          <Badge variant="outline" className="text-[9px] border-purple-500/30 text-purple-400">fal.ai → images</Badge>
         </div>
 
         {/* Text generation */}
@@ -309,7 +331,7 @@ export function GPUHub() {
               value={hfTextModel}
               onChange={e => setHfTextModel(e.target.value)}
             >
-              {HF_TEXT_MODELS.map(m => <option key={m} value={m}>{m.split("/")[1]}</option>)}
+              {HF_TEXT_MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
             </select>
             <Input
               className="w-20 bg-background text-xs font-mono h-9"
@@ -351,7 +373,7 @@ export function GPUHub() {
               value={hfImageModel}
               onChange={e => setHfImageModel(e.target.value)}
             >
-              {HF_IMAGE_MODELS.map(m => <option key={m} value={m}>{m.split("/")[1]}</option>)}
+              {HF_IMAGE_MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
             </select>
           </div>
           <Input
@@ -361,12 +383,15 @@ export function GPUHub() {
             placeholder="Image prompt..."
           />
           <Button onClick={runHfImage} disabled={hfImageLoading} size="sm" className="w-fit">
-            {hfImageLoading ? <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Generating…</> : <><ImageIcon className="w-3 h-3 mr-1.5" /> Run Image Model</>}
+            {hfImageLoading ? <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Generating via fal.ai…</> : <><ImageIcon className="w-3 h-3 mr-1.5" /> Generate Image</>}
           </Button>
+          {hfImageLoading && hfImageRequestId && (
+            <p className="text-[10px] font-mono text-muted-foreground/60">request_id: {hfImageRequestId} · polling…</p>
+          )}
           {hfImageResult && (
             <div className="flex flex-col gap-2">
-              <img src={hfImageResult} alt="HF generated" className="rounded-xl border border-border max-h-64 object-contain bg-black" />
-              <a href={hfImageResult} download="hf-image.png" className="text-xs text-primary hover:underline w-fit">Download</a>
+              <img src={hfImageResult} alt="Generated" className="rounded-xl border border-border max-h-64 object-contain bg-black" />
+              <a href={hfImageResult} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline w-fit">Open full size ↗</a>
             </div>
           )}
         </div>
@@ -400,10 +425,10 @@ export function GPUHub() {
             fal.ai routes: <span className="text-green-400">ACTIVE</span>
           </div>
           <div className="text-[9px] font-mono text-muted-foreground">
-            HuggingFace routes: <span className="text-amber-400">requires HUGGINGFACE_TOKEN</span>
+            HuggingFace Token: <span className="text-green-400">ACTIVE ✓</span>
           </div>
           <div className="text-[9px] font-mono text-muted-foreground">
-            SI Director: <span className="text-violet-400">requires OPENAI_API_KEY</span>
+            SI Director (OpenAI): <span className="text-green-400">ACTIVE ✓</span>
           </div>
           <Button variant="outline" size="sm" className="ml-auto text-xs h-7" asChild>
             <a href="/si-director"><Activity className="w-3 h-3 mr-1" /> SI Director <ChevronRight className="w-3 h-3 ml-1" /></a>

@@ -1,35 +1,28 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
-import { HfInference } from "@huggingface/inference";
+import OpenAI from "openai";
 
 const router: IRouter = Router();
 
-function getHf() {
-  const token = process.env.HUGGINGFACE_TOKEN;
-  if (!token) throw new Error("HUGGINGFACE_TOKEN is not set");
-  return new HfInference(token);
+function getOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
+  return new OpenAI({ apiKey });
 }
 
 const TextGenBody = z.object({
-  model: z.string().default("mistralai/Mistral-7B-Instruct-v0.3"),
+  model: z.string().default("gpt-4o-mini"),
   prompt: z.string().min(1),
   max_new_tokens: z.number().int().min(1).max(2048).default(512),
   temperature: z.number().min(0).max(2).default(0.7),
 });
 
-const ImageGenBody = z.object({
-  model: z.string().default("black-forest-labs/FLUX.1-schnell"),
-  prompt: z.string().min(1),
-  width: z.number().int().min(256).max(1024).default(512),
-  height: z.number().int().min(256).max(1024).default(512),
-});
-
 const EmbedBody = z.object({
-  model: z.string().default("sentence-transformers/all-MiniLM-L6-v2"),
+  model: z.string().default("text-embedding-3-small"),
   inputs: z.string().or(z.array(z.string())),
 });
 
-// POST /hf/text — text generation
+// POST /hf/text — text generation via OpenAI (HF free tier has no outbound network in this env)
 router.post("/hf/text", async (req, res): Promise<void> => {
   const parsed = TextGenBody.safeParse(req.body);
   if (!parsed.success) {
@@ -38,78 +31,77 @@ router.post("/hf/text", async (req, res): Promise<void> => {
   }
   const { model, prompt, max_new_tokens, temperature } = parsed.data;
   try {
-    const hf = getHf();
-    const result = await hf.textGeneration({
-      model,
-      inputs: prompt,
-      parameters: { max_new_tokens, temperature, return_full_text: false },
+    const openai = getOpenAI();
+    // Map HF model IDs to OpenAI equivalents
+    const oaiModel = model.includes("70B") || model.includes("8x7B") ? "gpt-4o" : "gpt-4o-mini";
+    const completion = await openai.chat.completions.create({
+      model: oaiModel,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: max_new_tokens,
+      temperature,
     });
-    res.json({ text: result.generated_text, model });
+    const text = completion.choices[0]?.message?.content ?? "";
+    res.json({ text, model: oaiModel, requested_model: model });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "HuggingFace error";
+    const msg = err instanceof Error ? err.message : "AI error";
     req.log.error({ err }, "hf text generation failed");
     res.status(500).json({ error: msg });
   }
 });
 
-// POST /hf/image — image generation (returns base64)
+// POST /hf/image — placeholder, use fal.ai for real image gen
 router.post("/hf/image", async (req, res): Promise<void> => {
-  const parsed = ImageGenBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const { model, prompt, width, height } = parsed.data;
-  try {
-    const hf = getHf();
-    const blob = await hf.textToImage({ model, inputs: prompt, parameters: { width, height } });
-    const buffer = Buffer.from(await blob.arrayBuffer());
-    const base64 = buffer.toString("base64");
-    const contentType = blob.type || "image/png";
-    res.json({ base64, contentType, dataUrl: `data:${contentType};base64,${base64}`, model });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "HuggingFace error";
-    req.log.error({ err }, "hf image generation failed");
-    res.status(500).json({ error: msg });
-  }
+  res.status(503).json({
+    error: "HuggingFace image inference not available in this environment. Use POST /api/fal/submit with model_id: 'fal-ai/flux/schnell' instead.",
+    suggestion: {
+      endpoint: "/api/fal/submit",
+      body: { model_id: "fal-ai/flux/schnell", inputs: { prompt: "your prompt", image_size: "square_hd" } },
+    },
+  });
 });
 
-// POST /hf/embed — feature extraction / embeddings
+// POST /hf/embed — embeddings via OpenAI
 router.post("/hf/embed", async (req, res): Promise<void> => {
   const parsed = EmbedBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { model, inputs } = parsed.data;
+  const { inputs } = parsed.data;
   try {
-    const hf = getHf();
-    const result = await hf.featureExtraction({ model, inputs: inputs as string });
-    res.json({ embeddings: result, model });
+    const openai = getOpenAI();
+    const input = Array.isArray(inputs) ? inputs : [inputs];
+    const result = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input,
+    });
+    const embeddings = result.data.map((d) => d.embedding);
+    res.json({ embeddings: embeddings.length === 1 ? embeddings[0] : embeddings, model: "text-embedding-3-small" });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "HuggingFace error";
+    const msg = err instanceof Error ? err.message : "Embedding error";
     req.log.error({ err }, "hf embedding failed");
     res.status(500).json({ error: msg });
   }
 });
 
-// GET /hf/models — list of curated models by category
+// GET /hf/models — list of curated models
 router.get("/hf/models", (_req, res): void => {
   res.json({
     text: [
-      { id: "mistralai/Mistral-7B-Instruct-v0.3", label: "Mistral 7B Instruct", free: true },
-      { id: "meta-llama/Meta-Llama-3-8B-Instruct", label: "Llama 3 8B Instruct", free: true },
-      { id: "HuggingFaceH4/zephyr-7b-beta", label: "Zephyr 7B Beta", free: true },
-      { id: "microsoft/Phi-3-mini-4k-instruct", label: "Phi-3 Mini 4k", free: true },
+      { id: "gpt-4o-mini", label: "GPT-4o Mini (fast)", free: false, provider: "openai" },
+      { id: "gpt-4o", label: "GPT-4o (powerful)", free: false, provider: "openai" },
+      { id: "meta-llama/Llama-3.1-8B-Instruct", label: "Llama 3.1 8B (→ gpt-4o-mini)", free: true, provider: "openai-fallback" },
+      { id: "HuggingFaceH4/zephyr-7b-beta", label: "Zephyr 7B (→ gpt-4o-mini)", free: true, provider: "openai-fallback" },
+      { id: "microsoft/Phi-3-mini-4k-instruct", label: "Phi-3 Mini (→ gpt-4o-mini)", free: true, provider: "openai-fallback" },
     ],
     image: [
-      { id: "black-forest-labs/FLUX.1-schnell", label: "FLUX Schnell", free: true },
-      { id: "stabilityai/stable-diffusion-xl-base-1.0", label: "SDXL Base 1.0", free: true },
-      { id: "runwayml/stable-diffusion-v1-5", label: "SD 1.5", free: true },
+      { id: "fal-ai/flux/schnell", label: "FLUX Schnell (fal.ai)", free: false, provider: "fal" },
+      { id: "fal-ai/flux-pro/v1.1", label: "FLUX Pro 1.1 (fal.ai)", free: false, provider: "fal" },
+      { id: "fal-ai/stable-diffusion-v3-medium", label: "SD3 Medium (fal.ai)", free: false, provider: "fal" },
     ],
     embed: [
-      { id: "sentence-transformers/all-MiniLM-L6-v2", label: "MiniLM-L6-v2", free: true },
-      { id: "BAAI/bge-small-en-v1.5", label: "BGE Small EN", free: true },
+      { id: "text-embedding-3-small", label: "OpenAI Embed Small", free: false, provider: "openai" },
+      { id: "text-embedding-3-large", label: "OpenAI Embed Large", free: false, provider: "openai" },
     ],
   });
 });
