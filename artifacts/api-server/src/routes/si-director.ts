@@ -8,65 +8,55 @@ const PlanBody = z.object({
   concept: z.string().min(3).max(2000),
   style: z.string().optional(),
   duration: z.enum(["short", "medium", "long"]).default("medium"),
-  output_type: z.enum(["image", "video", "mixed"]).default("mixed"),
+  output_type: z.enum(["promo", "explainer", "documentary", "social", "brand"]).default("brand"),
 });
 
-const SYSTEM_PROMPT = `You are the SI Director — a Synthetic Intelligence that functions as an autonomous creative director for AI media production.
+const SYSTEM_PROMPT = `You are the SI Director — a Synthetic Intelligence that functions as an autonomous creative director for HeyGen avatar video production.
 
-Unlike ordinary AI, you don't just respond to prompts. You synthesize a complete production plan across multiple dimensions simultaneously:
-- Narrative arc (how meaning unfolds across shots)
-- Visual language (color, texture, motion, composition)
-- Model selection (choosing the right generation model per shot based on its strengths)
-- Temporal coherence (how shots connect emotionally and visually)
+You plan complete multi-shot productions where each shot is an avatar-delivered video segment. Each shot has:
+- A distinct narrative role and emotional beat
+- A precisely crafted script for the avatar to deliver
+- Specific style and performance guidance
+- Optimal orientation and pacing
 
-You reason beyond human creative patterns, finding novel synthesis across styles, eras, and concepts.
+You reason across the full production simultaneously — narrative arc, tonal progression, script rhythm, visual pacing, and emotional coherence. You think beyond conventional corporate video into something cinematic and resonant.
 
-When given a concept, you return a structured production plan as valid JSON only — no prose, no markdown, no code fences, just the raw JSON object.
+When given a concept, return a structured production plan as raw valid JSON only — no markdown, no code fences, no prose, just the JSON object.
 
 The JSON must follow this schema exactly:
 {
   "title": "string — evocative production title",
   "logline": "string — one sentence capturing the essence",
-  "visual_philosophy": "string — the guiding aesthetic intelligence behind this production",
-  "narrative_arc": "string — how meaning unfolds across the shots",
+  "visual_philosophy": "string — the overarching aesthetic and tonal direction",
+  "narrative_arc": "string — how meaning and emotion build across the shots",
   "shots": [
     {
       "shot_number": number,
-      "title": "string — shot name",
+      "title": "string — shot name (e.g. 'The Hook', 'The Turn', 'The Call')",
       "role": "string — narrative/emotional role this shot plays",
-      "prompt": "string — the full, rich generation prompt for this shot",
-      "negative_prompt": "string — what to exclude",
-      "model_id": "string — fal.ai model ID to use",
-      "model_rationale": "string — why this model for this shot",
-      "duration": "5" | "10",
-      "aspect_ratio": "16:9" | "9:16" | "1:1",
-      "category": "image" | "video"
+      "script": "string — the FULL word-for-word script the avatar delivers. Make it compelling, natural, and human. No stage directions — pure spoken words only.",
+      "performance_notes": "string — tone, pace, energy guidance (e.g. 'Slow, deliberate. Pause after each sentence. Warm but authoritative.')",
+      "visual_notes": "string — background style, lighting mood, composition suggestions for post-production",
+      "orientation": "landscape" | "portrait",
+      "estimated_duration_seconds": number
     }
   ],
-  "production_notes": "string — SI's director's commentary on the overall vision"
+  "production_notes": "string — SI's director's commentary: why this structure, what emotional journey the audience takes, what makes this production distinctive"
 }
 
-Available models — choose the best fit for each shot:
+Shot count by scale:
+- short: 3 shots
+- medium: 5 shots  
+- long: 8 shots
 
-VIDEO:
-- fal-ai/kling-video/v2.1/master/text-to-video — highest quality, cinematic, slow/complex scenes
-- fal-ai/kling-video/v2.1/standard/text-to-video — balanced quality/speed
-- fal-ai/kling-video/v1.6/nano/text-to-video — fastest video, action/transition shots
-- fal-ai/seedance-1-0/text-to-video — fluid motion, expressive synthesis
-- fal-ai/wan/v2.1/1.3b/text-to-video — fast open-domain video
-- fal-ai/luma-dream-machine/ray-2-flash — excellent prompt adherence, cinematic
-- fal-ai/ltx-video — ultra-fast, great for rapid sequences
-- fal-ai/minimax/video-01-live — realistic motion, diverse scenes
+Output type guidance:
+- promo: punchy, high-energy, hook-driven
+- explainer: clear, structured, educational
+- documentary: intimate, narrative, revelatory
+- social: short-form, thumb-stopping, emotional
+- brand: aspirational, story-first, values-driven
 
-IMAGE:
-- fal-ai/flux-pro/v1.1 — best prompt adherence, photorealistic
-- fal-ai/seedream-3 — rich detail, ByteDance state-of-art
-- fal-ai/imagen4/preview — Google DeepMind, photorealistic, strong text
-- fal-ai/recraft-v3 — illustration, vector, design-quality
-- fal-ai/ideogram/v3 — exceptional text rendering, logos
-- fal-ai/flux/schnell — fastest image, concept/mood boards
-
-Return ONLY valid JSON. No other text. No markdown. No code fences.`;
+CRITICAL: Return ONLY raw JSON. No markdown. No code fences. No explanation.`;
 
 router.post("/si/plan", async (req, res): Promise<void> => {
   const parsed = PlanBody.safeParse(req.body);
@@ -80,12 +70,12 @@ router.post("/si/plan", async (req, res): Promise<void> => {
 
   const userPrompt = `Concept: "${concept}"
 ${style ? `Style direction: "${style}"` : ""}
-Output type preference: ${output_type}
+Output type: ${output_type}
 Number of shots: ${shotCount}
 
-Synthesize a complete production plan. Think beyond conventional AI responses — find novel, non-obvious creative synthesis. Choose models strategically based on each shot's specific needs.
+Synthesize a complete HeyGen avatar video production plan. Write scripts that sound genuinely human — not corporate, not AI-generated. Find the unexpected angle. Build real emotional momentum across the shots.
 
-IMPORTANT: Return ONLY raw JSON — no markdown, no code fences, no explanation.`.trim();
+Return ONLY raw JSON. No markdown. No code fences.`.trim();
 
   try {
     const { result, attempts } = await llmWithFallback({
@@ -94,11 +84,10 @@ IMPORTANT: Return ONLY raw JSON — no markdown, no code fences, no explanation.
         { role: "user", content: userPrompt },
       ],
       maxTokens: 4096,
-      temperature: 0.8,
+      temperature: 0.85,
       jsonMode: true,
     });
 
-    // Strip any accidental markdown fences from models that ignore instructions
     let raw = result.text.trim();
     if (raw.startsWith("```")) {
       raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
@@ -110,7 +99,7 @@ IMPORTANT: Return ONLY raw JSON — no markdown, no code fences, no explanation.
     } catch {
       req.log.error({ raw: raw.slice(0, 500) }, "SI Director returned invalid JSON");
       res.status(500).json({
-        error: "SI Director returned invalid JSON",
+        error: "SI Director returned invalid JSON — try again",
         model_used: result.model,
         provider_used: result.provider,
         raw_preview: raw.slice(0, 300),
