@@ -1,6 +1,11 @@
 /**
  * LLM Fallback Chain
- * Tries free HuggingFace Inference models in order, then falls back to OpenAI.
+ * Tries free HuggingFace Router models in order, then falls back to OpenAI.
+ *
+ * Tested working providers (via router.huggingface.co):
+ *  - cerebras: gpt-oss-120b, zai-glm-4.7   (fast reasoning models, free)
+ *
+ * Fallback order: cerebras/gpt-oss-120b → cerebras/zai-glm-4.7 → openai/gpt-4o-mini → openai/gpt-4o
  */
 
 export interface LLMMessage {
@@ -14,43 +19,61 @@ export interface LLMResult {
   provider: "huggingface" | "openai";
 }
 
-interface ModelEntry {
-  id: string;
-  provider: "huggingface" | "openai";
+export interface FallbackLog {
+  model: string;
+  provider: string;
+  error: string;
+}
+
+export interface FallbackResponse {
+  result: LLMResult;
+  attempts: FallbackLog[];
+}
+
+export interface FallbackOptions {
+  messages: LLMMessage[];
+  maxTokens?: number;
+  temperature?: number;
+  jsonMode?: boolean;
+}
+
+const HF_ROUTER_BASE = "https://router.huggingface.co";
+const OPENAI_API_BASE = "https://api.openai.com/v1";
+const TIMEOUT_MS = 45_000;
+
+interface HFModel {
+  provider: string;
+  model: string;
   label: string;
 }
 
-const HF_API_BASE = "https://api-inference.huggingface.co/models";
-const HF_TIMEOUT_MS = 30_000;
-const OPENAI_API_BASE = "https://api.openai.com/v1";
-const OPENAI_TIMEOUT_MS = 30_000;
+interface OAIModel {
+  model: string;
+  label: string;
+}
 
-export const FREE_HF_MODELS: ModelEntry[] = [
-  { id: "Qwen/Qwen2.5-72B-Instruct", provider: "huggingface", label: "Qwen 2.5 72B" },
-  { id: "meta-llama/Llama-3.3-70B-Instruct", provider: "huggingface", label: "Llama 3.3 70B" },
-  { id: "mistralai/Mistral-7B-Instruct-v0.3", provider: "huggingface", label: "Mistral 7B" },
-  { id: "HuggingFaceH4/zephyr-7b-beta", provider: "huggingface", label: "Zephyr 7B" },
-  { id: "microsoft/Phi-3-mini-4k-instruct", provider: "huggingface", label: "Phi-3 Mini" },
-  { id: "google/gemma-2-2b-it", provider: "huggingface", label: "Gemma 2 2B" },
+export const FREE_HF_MODELS: HFModel[] = [
+  { provider: "cerebras", model: "gpt-oss-120b", label: "Cerebras GPT-OSS 120B" },
+  { provider: "cerebras", model: "zai-glm-4.7", label: "Cerebras ZAI-GLM 4.7" },
 ];
 
-export const OPENAI_MODELS: ModelEntry[] = [
-  { id: "gpt-4o-mini", provider: "openai", label: "GPT-4o Mini" },
-  { id: "gpt-4o", provider: "openai", label: "GPT-4o" },
+export const OPENAI_MODELS: OAIModel[] = [
+  { model: "gpt-4o-mini", label: "GPT-4o Mini" },
+  { model: "gpt-4o", label: "GPT-4o" },
 ];
 
-async function tryHuggingFace(
-  modelId: string,
+async function tryHFRouter(
+  entry: HFModel,
   messages: LLMMessage[],
   maxTokens: number,
   temperature: number,
   hfToken: string
-): Promise<string | null> {
+): Promise<string> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), HF_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const res = await fetch(`${HF_API_BASE}/${modelId}/v1/chat/completions`, {
+    const res = await fetch(`${HF_ROUTER_BASE}/${entry.provider}/v1/chat/completions`, {
       method: "POST",
       signal: controller.signal,
       headers: {
@@ -58,7 +81,7 @@ async function tryHuggingFace(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: modelId,
+        model: entry.model,
         messages,
         max_tokens: maxTokens,
         temperature,
@@ -68,24 +91,22 @@ async function tryHuggingFace(
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`HF ${modelId} → HTTP ${res.status}: ${body.slice(0, 200)}`);
+      throw new Error(`HTTP ${res.status}: ${body.slice(0, 300)}`);
     }
 
     const data = await res.json() as {
-      choices?: { message?: { content?: string } }[];
+      choices?: { message?: { content?: string; reasoning?: string } }[];
       error?: string;
     };
 
-    if (data.error) throw new Error(`HF ${modelId} error: ${data.error}`);
+    if (data.error) throw new Error(data.error);
 
-    const text = data.choices?.[0]?.message?.content ?? "";
-    if (!text) throw new Error(`HF ${modelId} returned empty content`);
-    return text;
-  } catch (err) {
-    if ((err as Error).name === "AbortError") {
-      throw new Error(`HF ${modelId} timed out`);
+    const msg = data.choices?.[0]?.message;
+    const text = msg?.content ?? "";
+    if (!text.trim()) {
+      throw new Error("Empty content in response");
     }
-    throw err;
+    return text;
   } finally {
     clearTimeout(timer);
   }
@@ -97,10 +118,10 @@ async function tryOpenAI(
   maxTokens: number,
   temperature: number,
   apiKey: string,
-  jsonMode = false
-): Promise<string | null> {
+  jsonMode: boolean
+): Promise<string> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
     const body: Record<string, unknown> = {
@@ -122,8 +143,8 @@ async function tryOpenAI(
     });
 
     if (!res.ok) {
-      const errBody = await res.text();
-      throw new Error(`OpenAI ${modelId} → HTTP ${res.status}: ${errBody.slice(0, 300)}`);
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText.slice(0, 300)}`);
     }
 
     const data = await res.json() as {
@@ -131,45 +152,20 @@ async function tryOpenAI(
     };
 
     const text = data.choices?.[0]?.message?.content ?? "";
-    if (!text) throw new Error(`OpenAI ${modelId} returned empty content`);
+    if (!text.trim()) throw new Error("Empty content in response");
     return text;
-  } catch (err) {
-    if ((err as Error).name === "AbortError") {
-      throw new Error(`OpenAI ${modelId} timed out`);
-    }
-    throw err;
   } finally {
     clearTimeout(timer);
   }
 }
 
-export interface FallbackOptions {
-  messages: LLMMessage[];
-  maxTokens?: number;
-  temperature?: number;
-  jsonMode?: boolean;
-  preferModel?: string;
-}
-
-export interface FallbackLog {
-  model: string;
-  provider: string;
-  error: string;
-}
-
-export interface FallbackResponse {
-  result: LLMResult;
-  attempts: FallbackLog[];
-}
-
 /**
- * Try HuggingFace free models first, then OpenAI as final fallback.
- * Returns the first successful result.
+ * Try free HF Router models first (cerebras), then OpenAI as fallback.
  */
 export async function llmWithFallback(opts: FallbackOptions): Promise<FallbackResponse> {
   const {
     messages,
-    maxTokens = 512,
+    maxTokens = 1024,
     temperature = 0.7,
     jsonMode = false,
   } = opts;
@@ -179,43 +175,39 @@ export async function llmWithFallback(opts: FallbackOptions): Promise<FallbackRe
   const attempts: FallbackLog[] = [];
 
   if (hfToken) {
-    for (const model of FREE_HF_MODELS) {
+    for (const entry of FREE_HF_MODELS) {
       try {
-        const text = await tryHuggingFace(model.id, messages, maxTokens, temperature, hfToken);
-        if (text) {
-          return {
-            result: { text, model: model.id, provider: "huggingface" },
-            attempts,
-          };
-        }
+        const text = await tryHFRouter(entry, messages, maxTokens, temperature, hfToken);
+        return {
+          result: { text, model: entry.model, provider: "huggingface" },
+          attempts,
+        };
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
-        attempts.push({ model: model.id, provider: "huggingface", error });
+        attempts.push({ model: `${entry.provider}/${entry.model}`, provider: "huggingface", error });
       }
     }
   } else {
-    attempts.push({ model: "all-hf", provider: "huggingface", error: "HF_TOKEN not set, skipping" });
+    attempts.push({ model: "all-hf", provider: "huggingface", error: "HF_TOKEN not set — skipping" });
   }
 
   if (openaiKey) {
-    for (const model of OPENAI_MODELS) {
+    for (const entry of OPENAI_MODELS) {
       try {
-        const text = await tryOpenAI(model.id, messages, maxTokens, temperature, openaiKey, jsonMode);
-        if (text) {
-          return {
-            result: { text, model: model.id, provider: "openai" },
-            attempts,
-          };
-        }
+        const text = await tryOpenAI(entry.model, messages, maxTokens, temperature, openaiKey, jsonMode);
+        return {
+          result: { text, model: entry.model, provider: "openai" },
+          attempts,
+        };
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
-        attempts.push({ model: model.id, provider: "openai", error });
+        attempts.push({ model: entry.model, provider: "openai", error });
       }
     }
   } else {
-    attempts.push({ model: "all-openai", provider: "openai", error: "OPENAI_API_KEY not set, skipping" });
+    attempts.push({ model: "all-openai", provider: "openai", error: "OPENAI_API_KEY not set — skipping" });
   }
 
   const summary = attempts.map((a) => `[${a.provider}/${a.model}]: ${a.error}`).join(" | ");
-  throw new Error(`All LLM providers failed. Attempts: ${summary}`);
+  throw new Error(`All LLM providers failed. ${summary}`);
 }
