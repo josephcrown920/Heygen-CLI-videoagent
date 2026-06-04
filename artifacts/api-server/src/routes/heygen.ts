@@ -48,6 +48,16 @@ function extractError(body: { error?: { message?: string; code?: string | number
   return "An unexpected error occurred with HeyGen.";
 }
 
+function handleCatchError(err: unknown, res: ReturnType<typeof Router>["use"] extends never ? never : Parameters<Parameters<ReturnType<typeof Router>["use"]>[0]>[1], label: string, req: Parameters<Parameters<ReturnType<typeof Router>["use"]>[0]>[0]): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  const isTimeout = err instanceof Error && err.name === "AbortError";
+  const isMissingKey = msg.includes("not set");
+  (req as { log: { error: (obj: object, msg: string) => void } }).log.error({ err }, label);
+  (res as { status: (n: number) => { json: (o: object) => void } })
+    .status(isMissingKey ? 500 : isTimeout ? 504 : 502)
+    .json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+}
+
 // GET /avatars — list avatar looks
 router.get("/avatars", async (req, res): Promise<void> => {
   const parsed = ListAvatarLooksQueryParams.safeParse(req.query);
@@ -67,9 +77,11 @@ router.get("/avatars", async (req, res): Promise<void> => {
   try {
     upstream = await heygenFetch(`/v3/avatars/looks${qs}`);
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen avatars fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
@@ -111,9 +123,11 @@ router.get("/voices", async (req, res): Promise<void> => {
   try {
     upstream = await heygenFetch(`/v3/voices${qs}`);
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen voices fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
@@ -153,9 +167,11 @@ router.get("/videos", async (req, res): Promise<void> => {
   try {
     upstream = await heygenFetch(`/v3/videos${qs}`);
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen videos fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
@@ -200,9 +216,11 @@ router.post("/videos/agent", async (req, res): Promise<void> => {
       body: JSON.stringify(payload),
     });
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen video agent fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
@@ -249,9 +267,11 @@ router.post("/videos", async (req, res): Promise<void> => {
       body: JSON.stringify(payload),
     });
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen create video fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
@@ -286,9 +306,11 @@ router.get("/videos/:videoId", async (req, res): Promise<void> => {
   try {
     upstream = await heygenFetch(`/v3/videos/${params.data.videoId}`);
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen get video fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
@@ -341,9 +363,11 @@ router.delete("/videos/:videoId", async (req, res): Promise<void> => {
       method: "DELETE",
     });
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen delete video fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
@@ -361,11 +385,13 @@ router.delete("/videos/:videoId", async (req, res): Promise<void> => {
 router.get("/credits", async (req, res): Promise<void> => {
   let upstream: Response;
   try {
-    upstream = await heygenFetch("/v1/user/remaining_quota");
+    upstream = await heygenFetch("/v2/user/remaining_quota");
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof Error && err.name === "AbortError";
+    const isMissingKey = msg.includes("not set");
     req.log.error({ err }, "HeyGen credits fetch failed");
-    res.status(504).json({ error: isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
+    res.status(isMissingKey ? 500 : isTimeout ? 504 : 502).json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
     return;
   }
 
