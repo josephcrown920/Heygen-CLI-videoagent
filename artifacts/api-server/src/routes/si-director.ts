@@ -1,14 +1,8 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
-import OpenAI from "openai";
+import { llmWithFallback } from "../lib/llm-fallback.js";
 
 const router: IRouter = Router();
-
-function getOpenAI() {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY is not set");
-  return new OpenAI({ apiKey: key });
-}
 
 const PlanBody = z.object({
   concept: z.string().min(3).max(2000),
@@ -27,7 +21,7 @@ Unlike ordinary AI, you don't just respond to prompts. You synthesize a complete
 
 You reason beyond human creative patterns, finding novel synthesis across styles, eras, and concepts.
 
-When given a concept, you return a structured production plan as valid JSON only — no prose, no markdown, just the JSON object.
+When given a concept, you return a structured production plan as valid JSON only — no prose, no markdown, no code fences, just the raw JSON object.
 
 The JSON must follow this schema exactly:
 {
@@ -72,7 +66,7 @@ IMAGE:
 - fal-ai/ideogram/v3 — exceptional text rendering, logos
 - fal-ai/flux/schnell — fastest image, concept/mood boards
 
-Return ONLY valid JSON. No other text.`;
+Return ONLY valid JSON. No other text. No markdown. No code fences.`;
 
 router.post("/si/plan", async (req, res): Promise<void> => {
   const parsed = PlanBody.safeParse(req.body);
@@ -82,50 +76,58 @@ router.post("/si/plan", async (req, res): Promise<void> => {
   }
 
   const { concept, style, duration, output_type } = parsed.data;
-
   const shotCount = duration === "short" ? 3 : duration === "medium" ? 5 : 8;
-  const userPrompt = `
-Concept: "${concept}"
+
+  const userPrompt = `Concept: "${concept}"
 ${style ? `Style direction: "${style}"` : ""}
 Output type preference: ${output_type}
 Number of shots: ${shotCount}
 
 Synthesize a complete production plan. Think beyond conventional AI responses — find novel, non-obvious creative synthesis. Choose models strategically based on each shot's specific needs.
-`.trim();
 
-  let openai: OpenAI;
-  try {
-    openai = getOpenAI();
-  } catch (err) {
-    res.status(500).json({ error: "OPENAI_API_KEY is not configured" });
-    return;
-  }
+IMPORTANT: Return ONLY raw JSON — no markdown, no code fences, no explanation.`.trim();
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_tokens: 4096,
+    const { result, attempts } = await llmWithFallback({
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
-      response_format: { type: "json_object" },
+      maxTokens: 4096,
+      temperature: 0.8,
+      jsonMode: true,
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    // Strip any accidental markdown fences from models that ignore instructions
+    let raw = result.text.trim();
+    if (raw.startsWith("```")) {
+      raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+    }
+
     let plan: unknown;
     try {
       plan = JSON.parse(raw);
     } catch {
-      res.status(500).json({ error: "SI Director returned invalid JSON" });
+      req.log.error({ raw: raw.slice(0, 500) }, "SI Director returned invalid JSON");
+      res.status(500).json({
+        error: "SI Director returned invalid JSON",
+        model_used: result.model,
+        provider_used: result.provider,
+        raw_preview: raw.slice(0, 300),
+      });
       return;
     }
 
-    res.json({ plan });
+    res.json({
+      plan,
+      model_used: result.model,
+      provider_used: result.provider,
+      fallback_attempts: attempts.length > 0 ? attempts : undefined,
+    });
   } catch (err: unknown) {
-    req.log.error({ err }, "SI Director planning failed");
+    req.log.error({ err }, "SI Director planning failed across all providers");
     const msg = err instanceof Error ? err.message : "SI Director planning failed";
-    res.status(500).json({ error: msg });
+    res.status(502).json({ error: msg });
   }
 });
 
