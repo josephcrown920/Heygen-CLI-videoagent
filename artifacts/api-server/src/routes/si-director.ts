@@ -120,4 +120,60 @@ Return ONLY raw JSON. No markdown. No code fences.`.trim();
   }
 });
 
+const RewriteBody = z.object({
+  shot_title: z.string(),
+  shot_role: z.string(),
+  current_script: z.string(),
+  performance_notes: z.string().optional(),
+  production_title: z.string().optional(),
+  direction: z.string().optional(),
+});
+
+router.post("/si/rewrite-script", async (req, res): Promise<void> => {
+  const parsed = RewriteBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { shot_title, shot_role, current_script, performance_notes, production_title, direction } = parsed.data;
+
+  const systemPrompt = `You are a senior screenwriter and creative director. Your job is to rewrite a script for a single avatar video shot — making it more compelling, human, and emotionally resonant.
+
+Rules:
+- Output ONLY the new script text. No quotes, no labels, no explanation, no stage directions.
+- Keep it natural speech — the way a real person would actually say this out loud.
+- Honor the emotional tone and narrative role of the shot.
+- If a direction is given, follow it precisely.
+- Length: similar to the original unless direction says otherwise.`;
+
+  const userPrompt = `Production: "${production_title ?? "Untitled"}"
+Shot: "${shot_title}"
+Role: "${shot_role}"
+Performance notes: ${performance_notes ?? "none"}
+${direction ? `Rewrite direction: "${direction}"` : "Rewrite this to be more compelling and human."}
+
+Current script:
+${current_script}
+
+Output only the new script text.`.trim();
+
+  try {
+    const { result } = await llmWithFallback({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      maxTokens: 1024,
+      temperature: 0.9,
+    });
+
+    const script = result.text.trim().replace(/^["']|["']$/g, "");
+    res.json({ script, model_used: result.model, provider_used: result.provider });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Rewrite failed";
+    res.status(502).json({ error: msg });
+  }
+});
+
 export default router;
