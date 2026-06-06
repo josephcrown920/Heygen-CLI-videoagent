@@ -52,6 +52,25 @@ const KLING_PARAMS: ModelParam[] = [
 export const ALL_MODELS: Model[] = [
   // ─── VIDEO MODELS ───────────────────────────────────────────────────────────
   {
+    id: "kling-direct/v2-master-omni",
+    name: "Kling Omni",
+    description: "Kling's Omni tier — highest quality direct API with cinematic Pro mode and photorealistic output.",
+    provider: "Kuaishou",
+    providerColor: "#FF6B35",
+    category: "video",
+    badge: "OMNI",
+    params: [
+      { key: "prompt", label: "Prompt", type: "text", placeholder: "Describe the video you want to generate..." },
+      { key: "negative_prompt", label: "Negative Prompt", type: "text", placeholder: "What to avoid..." },
+      { key: "duration", label: "Duration", type: "select", default: "5", options: DURATION_OPTIONS },
+      { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "16:9", options: ASPECT_RATIO_OPTIONS },
+      { key: "mode", label: "Mode", type: "select", default: "pro", options: [
+        { label: "Pro (best quality)", value: "pro" },
+        { label: "Standard", value: "std" },
+      ]},
+    ],
+  },
+  {
     id: "fal-ai/kling-video/v2.1/master/text-to-video",
     name: "Kling 2.1 Master",
     description: "Highest quality Kling video generation with cinematic motion and photorealism.",
@@ -100,6 +119,25 @@ export const ALL_MODELS: Model[] = [
     params: KLING_PARAMS,
   },
   {
+    id: "fal-ai/seedance-1-0-pro/text-to-video",
+    name: "Seedance 1.0 Pro",
+    description: "ByteDance's Seedance Pro — highest fidelity video with superior motion coherence and detail.",
+    provider: "ByteDance",
+    providerColor: "#1D9BF0",
+    category: "video",
+    badge: "PRO",
+    params: [
+      { key: "prompt", label: "Prompt", type: "text", placeholder: "Describe the video..." },
+      { key: "negative_prompt", label: "Negative Prompt", type: "text", placeholder: "What to avoid..." },
+      { key: "duration", label: "Duration", type: "select", default: "5", options: DURATION_OPTIONS },
+      { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "16:9", options: ASPECT_RATIO_OPTIONS },
+      { key: "resolution", label: "Resolution", type: "select", default: "1080p", options: [
+        { label: "1080p", value: "1080p" },
+        { label: "720p", value: "720p" },
+      ]},
+    ],
+  },
+  {
     id: "fal-ai/seedance-1-0/text-to-video",
     name: "Seedance 1.0",
     description: "ByteDance's Seedance — fluid motion, rich detail, and expressive video synthesis.",
@@ -110,6 +148,20 @@ export const ALL_MODELS: Model[] = [
     params: [
       { key: "prompt", label: "Prompt", type: "text", placeholder: "Describe the video..." },
       { key: "negative_prompt", label: "Negative Prompt", type: "text", placeholder: "What to avoid..." },
+      { key: "duration", label: "Duration", type: "select", default: "5", options: DURATION_OPTIONS },
+      { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "16:9", options: ASPECT_RATIO_OPTIONS },
+    ],
+  },
+  {
+    id: "fal-ai/seedance-1-0-lite/text-to-video",
+    name: "Seedance Lite",
+    description: "ByteDance's Seedance Lite — fast video generation for rapid iteration.",
+    provider: "ByteDance",
+    providerColor: "#1D9BF0",
+    category: "video",
+    badge: "FAST",
+    params: [
+      { key: "prompt", label: "Prompt", type: "text", placeholder: "Describe the video..." },
       { key: "duration", label: "Duration", type: "select", default: "5", options: DURATION_OPTIONS },
       { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "16:9", options: ASPECT_RATIO_OPTIONS },
     ],
@@ -249,7 +301,7 @@ export const ALL_MODELS: Model[] = [
     provider: "ByteDance",
     providerColor: "#1D9BF0",
     category: "image",
-    badge: "NEW",
+    badge: "TOP",
     params: [
       { key: "prompt", label: "Prompt", type: "text", placeholder: "Describe the image..." },
       { key: "negative_prompt", label: "Negative Prompt", type: "text", placeholder: "What to avoid..." },

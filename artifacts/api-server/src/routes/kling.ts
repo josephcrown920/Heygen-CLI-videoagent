@@ -158,7 +158,8 @@ router.get("/kling/task/:taskId", async (req, res) => {
 router.get("/kling/models", (_req, res) => {
   res.json({
     models: [
-      { id: "kling-v2-master", name: "Kling v2 Master", description: "Highest quality, slower generation" },
+      { id: "kling-v2-master", name: "Kling Omni (v2 Master Pro)", description: "Highest quality cinematic generation — Omni Pro mode", modes: ["pro", "std"] },
+      { id: "kling-v2-master", name: "Kling v2 Master", description: "Top-tier Kling v2 generation", modes: ["std"] },
       { id: "kling-v1-6-pro", name: "Kling v1.6 Pro", description: "Pro tier, balanced quality/speed" },
       { id: "kling-v1-6-standard", name: "Kling v1.6 Standard", description: "Standard tier" },
       { id: "kling-v1-5-pro", name: "Kling v1.5 Pro", description: "Previous gen Pro" },

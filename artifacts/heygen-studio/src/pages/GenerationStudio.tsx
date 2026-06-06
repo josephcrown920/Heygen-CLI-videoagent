@@ -16,7 +16,33 @@ import {
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
+const IS_KLING_DIRECT = (id: string) => id.startsWith("kling-direct/");
+
 async function submitGeneration(model_id: string, inputs: Record<string, unknown>): Promise<{ request_id: string }> {
+  if (IS_KLING_DIRECT(model_id)) {
+    const res = await fetch(`${BASE_URL}/api/kling/text-to-video`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: inputs.prompt,
+        negative_prompt: inputs.negative_prompt,
+        model_name: "kling-v2-master",
+        aspect_ratio: inputs.aspect_ratio ?? "16:9",
+        duration: String(inputs.duration ?? "5"),
+        mode: inputs.mode ?? "pro",
+        cfg_scale: 0.5,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json() as { error?: string; message?: string };
+      throw new Error(err.error ?? err.message ?? "Kling Omni submission failed");
+    }
+    const data = await res.json() as { data?: { task_id?: string }; task_id?: string };
+    const task_id = data?.data?.task_id ?? data?.task_id ?? "";
+    if (!task_id) throw new Error("No task ID returned from Kling");
+    return { request_id: task_id };
+  }
+
   const res = await fetch(`${BASE_URL}/api/fal/submit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -35,6 +61,28 @@ async function pollStatus(model_id: string, request_id: string): Promise<{
   video_url?: string | null;
   logs?: { message: string }[];
 }> {
+  if (IS_KLING_DIRECT(model_id)) {
+    const res = await fetch(`${BASE_URL}/api/kling/task/${request_id}`);
+    if (!res.ok) {
+      const err = await res.json() as { error?: string };
+      throw new Error(err.error ?? "Kling status check failed");
+    }
+    const data = await res.json() as {
+      data?: {
+        task_status?: string;
+        task_result?: { videos?: { url: string }[] };
+      };
+    };
+    const taskData = data?.data;
+    const status = taskData?.task_status;
+    if (status === "succeed") {
+      const videoUrl = taskData?.task_result?.videos?.[0]?.url ?? null;
+      return { status: "COMPLETED", video_url: videoUrl };
+    }
+    if (status === "failed") return { status: "FAILED" };
+    return { status: "IN_QUEUE" };
+  }
+
   const params = new URLSearchParams({ model_id, request_id });
   const res = await fetch(`${BASE_URL}/api/fal/status?${params}`);
   if (!res.ok) {
