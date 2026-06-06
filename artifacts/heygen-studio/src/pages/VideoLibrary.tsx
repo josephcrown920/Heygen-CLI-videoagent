@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   useListVideos, 
-  getListVideosQueryKey
+  getListVideosQueryKey,
+  type Video,
 } from "@workspace/api-client-react";
 import { VideoCard } from "@/components/VideoCard";
 import { Library, Search } from "lucide-react";
@@ -13,25 +14,25 @@ const PAGE_SIZE = 16;
 export function VideoLibrary() {
   const [search, setSearch] = useState("");
   const [nextToken, setNextToken] = useState<string | undefined>(undefined);
-  const [allVideos, setAllVideos] = useState<NonNullable<ReturnType<typeof useListVideos>["data"]>["videos"]>([]);
+  const [allVideos, setAllVideos] = useState<Video[]>([]);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  const { data, isLoading, isFetching } = useListVideos(
-    { limit: PAGE_SIZE, ...(nextToken ? { token: nextToken } : {}) },
-    {
-      query: {
-        queryKey: getListVideosQueryKey({ limit: PAGE_SIZE, ...(nextToken ? { token: nextToken } : {}) }),
-        onSuccess: (d: { videos: typeof allVideos; next_token?: string | null }) => {
-          if (!hasLoadedOnce) {
-            setAllVideos(d.videos ?? []);
-            setHasLoadedOnce(true);
-          } else {
-            setAllVideos(prev => [...prev, ...(d.videos ?? [])]);
-          }
-        }
-      }
+  const queryParams = { limit: PAGE_SIZE, ...(nextToken ? { token: nextToken } : {}) };
+  const { data, isLoading, isFetching } = useListVideos(queryParams, {
+    query: {
+      queryKey: getListVideosQueryKey(queryParams),
+    },
+  });
+
+  useEffect(() => {
+    if (!data || isFetching) return;
+    if (!hasLoadedOnce || !nextToken) {
+      setAllVideos(data.videos ?? []);
+      setHasLoadedOnce(true);
+      return;
     }
-  );
+    setAllVideos(prev => [...prev, ...(data.videos ?? [])]);
+  }, [data, hasLoadedOnce, isFetching, nextToken]);
 
   const serverNextToken = data?.next_token;
 

@@ -12,6 +12,8 @@ const router: IRouter = Router();
 router.use(authRouter);
 router.use(healthRouter);
 router.use(heygenRouter);
+// Backward-compatible namespace used by older studio pages and CLI tools.
+router.use("/heygen", heygenRouter);
 router.use(falRouter);
 router.use(klingRouter);
 router.use(siDirectorRouter);

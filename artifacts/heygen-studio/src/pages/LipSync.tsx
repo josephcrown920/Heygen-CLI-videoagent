@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { apiPath } from "@/lib/api";
 import {
-  Mic, Upload, Play, Loader2, Video, Check,
-  Music, Waveform, User, ChevronDown, X, FileAudio,
+  Mic, Upload, Loader2, Video, Check,
+  Music, X, FileAudio,
   Sparkles, AlertCircle,
 } from "lucide-react";
 
@@ -33,29 +34,113 @@ export function LipSync() {
   const [syncMode, setSyncMode] = useState(SYNC_MODES[0]);
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
 
-  const handleAudio = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudio = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setAudioFile(f);
+    if (f) {
+      setAudioFile(f);
+      setDone(false);
+      setResultUrl(null);
+    }
   };
 
-  const handleVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideo = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setVideoFile(f);
+    if (f) {
+      setVideoFile(f);
+      setDone(false);
+      setResultUrl(null);
+    }
   };
 
-  const handleGenerate = () => {
+  const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Unable to read file"));
+    reader.readAsDataURL(file);
+  });
+
+  const pollResult = async (id: string) => {
+    const params = new URLSearchParams({
+      model_id: "fal-ai/sync-lipsync/v2",
+      request_id: id,
+    });
+
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      const res = await fetch(apiPath(`/api/fal/status?${params}`), { credentials: "include" });
+      const data = await res.json() as { status?: string; video_url?: string | null; error?: string; logs?: { message: string }[] };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Lip sync status check failed");
+
+      if (data.status === "COMPLETED") {
+        if (!data.video_url) throw new Error("fal.ai completed the job but did not return a video URL.");
+        return data.video_url;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+
+    throw new Error("Lip sync is still processing. Try again from Creations in a moment.");
+  };
+
+  const handleGenerate = async () => {
     if (!audioFile) {
       toast({ title: "Upload an audio track first", variant: "destructive" });
       return;
     }
+    if (!videoFile) {
+      toast({ title: "Upload a reference video", description: "fal.ai lip sync needs both audio and a face video to sync.", variant: "destructive" });
+      videoRef.current?.click();
+      return;
+    }
+
+    const maxBytes = 25 * 1024 * 1024;
+    if (audioFile.size > maxBytes || videoFile.size > maxBytes) {
+      toast({ title: "File too large for browser upload", description: "Use files under 25MB or host them at a public URL before submitting.", variant: "destructive" });
+      return;
+    }
+
     setGenerating(true);
     setDone(false);
-    setTimeout(() => {
-      setGenerating(false);
+    setResultUrl(null);
+    setRequestId(null);
+
+    try {
+      const [audioUrl, videoUrl] = await Promise.all([
+        fileToDataUrl(audioFile),
+        fileToDataUrl(videoFile),
+      ]);
+
+      const res = await fetch(apiPath("/api/fal/submit"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model_id: "fal-ai/sync-lipsync/v2",
+          inputs: {
+            model: syncMode.id === "mirror" ? "lipsync-2-pro" : "lipsync-2",
+            video_url: videoUrl,
+            audio_url: audioUrl,
+            sync_mode: "cut_off",
+          },
+        }),
+      });
+      const data = await res.json() as { request_id?: string; error?: string };
+      if (!res.ok || data.error || !data.request_id) throw new Error(data.error ?? "Lip sync submit failed");
+
+      setRequestId(data.request_id);
+      toast({ title: "Lip sync queued", description: `Connected to fal.ai · ${data.request_id.slice(0, 8)}` });
+
+      const url = await pollResult(data.request_id);
+      setResultUrl(url);
       setDone(true);
       toast({ title: "Lip sync complete!", description: `${selectedAvatar.name} synced to ${audioFile.name}` });
-    }, 4000);
+    } catch (err) {
+      toast({ title: "Lip sync failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -105,7 +190,7 @@ export function LipSync() {
             </div>
             <div className="text-center">
               <p className="font-medium text-sm">Drop your audio here</p>
-              <p className="text-xs text-muted-foreground mt-1">MP3, WAV, M4A, AAC — up to 200MB</p>
+              <p className="text-xs text-muted-foreground mt-1">MP3, WAV, M4A, AAC — up to 25MB</p>
             </div>
             <Button variant="outline" size="sm" className="mt-1" onClick={e => { e.stopPropagation(); audioRef.current?.click(); }}>
               <Upload className="w-3.5 h-3.5 mr-1.5" /> Select Audio
@@ -185,7 +270,7 @@ export function LipSync() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground font-bold flex-shrink-0">4</div>
-            <h2 className="font-semibold text-sm">Reference Video <span className="text-muted-foreground font-normal">(optional)</span></h2>
+            <h2 className="font-semibold text-sm">Reference Video <span className="text-pink-400 font-normal">(required for backend)</span></h2>
           </div>
           {videoFile && (
             <button onClick={() => setVideoFile(null)} className="text-muted-foreground hover:text-destructive">
@@ -203,7 +288,7 @@ export function LipSync() {
             className="text-xs text-muted-foreground border border-dashed border-border rounded-xl px-4 py-3 hover:border-primary/40 transition-colors flex items-center gap-2"
           >
             <Video className="w-3.5 h-3.5" />
-            Upload reference video to match motion style
+            Upload face video for fal.ai lip sync
           </button>
         )}
         <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={handleVideo} />
@@ -216,14 +301,22 @@ export function LipSync() {
             <Check className="w-4 h-4 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold">Lip sync complete!</p>
-              <p className="text-xs opacity-80">Check My Creations to view and download</p>
+              <p className="text-xs opacity-80">Connected to fal.ai; your generated video is ready below.</p>
             </div>
           </div>
         )}
 
+        {resultUrl && (
+          <video src={resultUrl} controls className="w-full rounded-xl border border-green-500/20 bg-black" />
+        )}
+
+        {requestId && !done && (
+          <p className="text-xs text-muted-foreground text-center">fal.ai request: <span className="font-mono">{requestId}</span></p>
+        )}
+
         <Button
           onClick={handleGenerate}
-          disabled={generating || !audioFile}
+          disabled={generating || !audioFile || !videoFile}
           className="h-12 text-sm font-bold"
         >
           {generating ? (
@@ -233,9 +326,9 @@ export function LipSync() {
           )}
         </Button>
 
-        {!audioFile && (
+        {(!audioFile || !videoFile) && (
           <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
-            <AlertCircle className="w-3 h-3" /> Upload an audio track to enable generation
+            <AlertCircle className="w-3 h-3" /> Upload audio and a reference face video to enable backend generation
           </p>
         )}
       </div>

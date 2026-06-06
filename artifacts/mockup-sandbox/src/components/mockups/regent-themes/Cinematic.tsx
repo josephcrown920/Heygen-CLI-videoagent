@@ -176,7 +176,7 @@ export function Cinematic() {
         {/* Status strip */}
         <div style={{ margin: "0 28px 28px", background: "rgba(200,169,110,0.04)", border: "1px solid rgba(200,169,110,0.1)", borderRadius: 8, padding: "12px 18px", display: "flex", gap: 28, alignItems: "center" }}>
           {[["Kling Master", "Ready"], ["Seedance 1.0", "Ready"], ["HeyGen", "Connected"], ["Gemini Pro", "Active"]].map(([model, status], i) => (
-            <div key={i} style={{ display: "flex", align: "center", gap: 6, fontSize: 11 }}>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
               <span style={{ width: 6, height: 6, background: "#6ec8a0", borderRadius: "50%", display: "inline-block", marginTop: 2 }} />
               <span style={{ color: "rgba(232,224,212,0.6)" }}>{model}</span>
               <span style={{ color: "#6ec8a0", fontWeight: 600 }}>{status}</span>

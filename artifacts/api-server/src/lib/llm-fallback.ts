@@ -38,6 +38,7 @@ export interface FallbackOptions {
   maxTokens?: number;
   temperature?: number;
   jsonMode?: boolean;
+  preferModel?: string;
 }
 
 const HF_ROUTER_BASE = "https://router.huggingface.co";
@@ -175,6 +176,7 @@ export async function llmWithFallback(opts: FallbackOptions): Promise<FallbackRe
     maxTokens = 1024,
     temperature = 0.7,
     jsonMode = false,
+    preferModel,
   } = opts;
 
   const googleKey = process.env.GOOGLE_AI_API_KEY;
@@ -184,7 +186,10 @@ export async function llmWithFallback(opts: FallbackOptions): Promise<FallbackRe
 
   // 1. Gemini (fastest, best quality)
   if (googleKey) {
-    for (const m of GEMINI_MODELS) {
+    const geminiModels = preferModel
+      ? [...GEMINI_MODELS].sort((a, b) => Number(b.model === preferModel) - Number(a.model === preferModel))
+      : GEMINI_MODELS;
+    for (const m of geminiModels) {
       try {
         const text = await tryOpenAICompat(GEMINI_API_BASE, m.model, googleKey, messages, maxTokens, temperature, jsonMode);
         return { result: { text, model: m.model, provider: "gemini" }, attempts };
@@ -199,7 +204,10 @@ export async function llmWithFallback(opts: FallbackOptions): Promise<FallbackRe
 
   // 2. HuggingFace Router (Cerebras — free)
   if (hfToken) {
-    for (const entry of FREE_HF_MODELS) {
+    const hfModels = preferModel
+      ? [...FREE_HF_MODELS].sort((a, b) => Number(b.model === preferModel) - Number(a.model === preferModel))
+      : FREE_HF_MODELS;
+    for (const entry of hfModels) {
       try {
         const text = await tryHFRouter(entry, messages, maxTokens, temperature, hfToken);
         return {
@@ -217,7 +225,10 @@ export async function llmWithFallback(opts: FallbackOptions): Promise<FallbackRe
 
   // 3. OpenAI (paid fallback)
   if (openaiKey) {
-    for (const entry of OPENAI_MODELS) {
+    const openaiModels = preferModel
+      ? [...OPENAI_MODELS].sort((a, b) => Number(b.model === preferModel) - Number(a.model === preferModel))
+      : OPENAI_MODELS;
+    for (const entry of openaiModels) {
       try {
         const text = await tryOpenAICompat(OPENAI_API_BASE, entry.model, openaiKey, messages, maxTokens, temperature, jsonMode);
         return {

@@ -110,14 +110,14 @@ router.get("/hf/models", (_req, res): void => {
   res.json({
     text: [
       ...FREE_HF_MODELS.map((m) => ({
-        id: m.id,
+        id: m.model,
         label: m.label,
         free: true,
         provider: "huggingface",
         priority: "primary",
       })),
       ...OPENAI_MODELS.map((m) => ({
-        id: m.id,
+        id: m.model,
         label: m.label,
         free: false,
         provider: "openai",
