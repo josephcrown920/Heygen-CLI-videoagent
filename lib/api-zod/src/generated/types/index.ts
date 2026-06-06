@@ -6,9 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './authorizationSessionHeaderParameter';
+export * from './authUser';
+export * from './authUserEnvelope';
 export * from './avatarLook';
 export * from './avatarLookList';
+export * from './beginBrowserLoginParams';
 export * from './credits';
+export * from './errorEnvelope';
 export * from './healthStatus';
 export * from './listAvatarLooksParams';
 export * from './listVideosParams';

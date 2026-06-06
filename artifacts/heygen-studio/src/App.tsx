@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Landing } from "@/pages/Landing";
+import { useAuth } from "@/hooks/useAuth";
 import { Dashboard } from "@/pages/Dashboard";
 import { VideoLibrary } from "@/pages/VideoLibrary";
 import { CreateVideo } from "@/pages/CreateVideo";
@@ -35,6 +37,20 @@ const queryClient = new QueryClient({
 });
 
 function Router() {
+  const { isLoading, isAuthenticated } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
   return (
     <AppLayout>
       <Switch>
@@ -63,6 +79,8 @@ function Router() {
     </AppLayout>
   );
 }
+
+export { useAuth };
 
 function App() {
   return (

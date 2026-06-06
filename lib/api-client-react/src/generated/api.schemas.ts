@@ -5,6 +5,26 @@
  * HeyGen Studio API
  * OpenAPI spec version: 0.1.0
  */
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  profileImageUrl?: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -120,6 +140,8 @@ export interface Credits {
   credit_type?: string | null;
 }
 
+export type AuthorizationSessionHeaderParameter = string;
+
 export type ListAvatarLooksParams = {
 limit?: number;
 /**
@@ -154,5 +176,9 @@ limit?: number;
  * @nullable
  */
 token?: string | null;
+};
+
+export type BeginBrowserLoginParams = {
+returnTo?: string;
 };
 

@@ -25,7 +25,11 @@ import {
   ServerCog,
   Menu,
   X,
+  LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 function RegentLogo({ size = 28 }: { size?: number }) {
   return (
@@ -129,10 +133,16 @@ function SidebarContent({
   location,
   onNavigate,
   credits,
+  user,
+  login,
+  logout,
 }: {
   location: string;
   onNavigate?: () => void;
   credits?: { remaining_credits?: number } | null;
+  user?: { firstName: string | null; email: string | null; profileImageUrl: string | null } | null;
+  login: () => void;
+  logout: () => void;
 }) {
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return location === href;
@@ -174,7 +184,7 @@ function SidebarContent({
         ))}
       </div>
 
-      <div className="p-3 border-t border-sidebar-border flex-shrink-0">
+      <div className="p-3 border-t border-sidebar-border flex-shrink-0 flex flex-col gap-2">
         <div className="bg-card rounded-lg p-2.5 border border-card-border flex items-center gap-2">
           <Coins className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <span className="text-xs text-muted-foreground flex-1 truncate">Regent Credits</span>
@@ -182,6 +192,28 @@ function SidebarContent({
             {credits?.remaining_credits ?? "—"}
           </span>
         </div>
+        {user ? (
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            {user.profileImageUrl ? (
+              <img src={user.profileImageUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <User className="w-4 h-4 flex-shrink-0" />
+            )}
+            <span className="flex-1 truncate text-left">{user.firstName ?? user.email ?? "Account"}</span>
+            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+          </button>
+        ) : (
+          <button
+            onClick={login}
+            className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <LogIn className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-left font-medium">Sign in</span>
+          </button>
+        )}
       </div>
     </>
   );
@@ -190,17 +222,16 @@ function SidebarContent({
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { user, login, logout } = useAuth();
 
   const { data: credits } = useGetCredits({
     query: { queryKey: getGetCreditsQueryKey() }
   });
 
-  // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
   }, [location]);
 
-  // Lock body scroll when drawer open on mobile
   useEffect(() => {
     if (drawerOpen) {
       document.body.style.overflow = "hidden";
@@ -209,6 +240,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
     return () => { document.body.style.overflow = ""; };
   }, [drawerOpen]);
+
+  const sidebarProps = { location, credits, user, login, logout };
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
@@ -221,7 +254,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <span className="font-bold text-base tracking-tight">Regent</span>
           </Link>
         </div>
-        <SidebarContent location={location} credits={credits} />
+        <SidebarContent {...sidebarProps} />
       </aside>
 
       {/* ── Mobile drawer backdrop ── */}
@@ -250,7 +283,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <X className="w-4 h-4" />
           </button>
         </div>
-        <SidebarContent location={location} onNavigate={() => setDrawerOpen(false)} credits={credits} />
+        <SidebarContent {...sidebarProps} onNavigate={() => setDrawerOpen(false)} />
       </aside>
 
       {/* ── Main content ── */}
