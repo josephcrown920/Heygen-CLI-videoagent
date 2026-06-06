@@ -1,4 +1,5 @@
 - [HeyGen Studio architecture](heygen-studio-arch.md) — monorepo: api-server (Express, PORT env), heygen-studio (Vite/React), shared lib/api-client-react codegen via Orval from openapi.yaml
+- [Replit Auth wiring](replit-auth-wiring.md) — auth inline in api-server (no api-zod for auth types); Vite proxy /api→8080; useAuth hook in heygen-studio/src/hooks/useAuth.ts; Landing shown when unauthenticated
 - [fal.ai proxy routes](fal-routes.md) — POST /fal/submit + GET /fal/status; async queue pattern; FAL_API_KEY secret set; all model IDs in lib/models.ts
 - [Feature set built](feature-set.md) — Dashboard, AvatarShots, UrbanCuts, LipSync, AppLibrary, ViralEngine, Canvas, CLI, References, Scenes&Props, Lyrics, LiveAvatar, ModelHub, Creations, SIDirector all wired into AppLayout nav and App.tsx routes
 - [SI Director](si-director.md) — POST /api/si/plan uses OPENAI_API_KEY + gpt-4o with JSON mode; plans full production (title, shots, model selection, narrative arc); openai npm pkg installed in api-server
