@@ -45,7 +45,7 @@
 
   --font-sans: "Inter", sans-serif;
   --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
+  --font-mono: "Menlo", monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -54,50 +54,56 @@
 }
 
 :root {
-  /* ── Deep navy background ── */
-  --background: 222 25% 4%;
-  --foreground: 0 0% 97%;
+  /* ── Neon Pulse: deep dark base ── */
+  --background: 240 20% 2%;
+  --foreground: 220 20% 90%;
 
-  --card: 222 22% 7%;
-  --card-foreground: 0 0% 97%;
-  --card-border: 222 20% 13%;
+  --card: 240 18% 5%;
+  --card-foreground: 220 20% 90%;
+  --card-border: 240 15% 10%;
 
-  --popover: 222 22% 7%;
-  --popover-foreground: 0 0% 97%;
-  --popover-border: 222 20% 13%;
+  --popover: 240 18% 5%;
+  --popover-foreground: 220 20% 90%;
+  --popover-border: 240 15% 10%;
 
-  /* ── Primary: Regent Red ── */
-  --primary: 3 85% 55%;
-  --primary-foreground: 0 0% 100%;
+  /* ── Primary: Electric Cyan ── */
+  --primary: 185 100% 50%;
+  --primary-foreground: 240 20% 2%;
 
-  --secondary: 222 20% 12%;
-  --secondary-foreground: 0 0% 97%;
+  --secondary: 240 15% 9%;
+  --secondary-foreground: 220 20% 90%;
 
-  --muted: 222 20% 12%;
-  --muted-foreground: 220 8% 60%;
+  --muted: 240 15% 9%;
+  --muted-foreground: 220 10% 45%;
 
-  /* ── Accent: Electric Blue ── */
-  --accent: 217 90% 58%;
-  --accent-foreground: 0 0% 100%;
+  /* ── Accent: Neon Magenta ── */
+  --accent: 300 100% 60%;
+  --accent-foreground: 240 20% 2%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 222 20% 13%;
-  --input: 222 20% 13%;
-  --ring: 3 85% 55%;
+  --border: 240 15% 10%;
+  --input: 240 15% 10%;
+  --ring: 185 100% 50%;
 
-  /* ── Sidebar: slightly darker navy ── */
-  --sidebar: 222 25% 5%;
-  --sidebar-foreground: 0 0% 97%;
-  --sidebar-border: 222 20% 11%;
-  --sidebar-primary: 3 85% 55%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 222 20% 12%;
-  --sidebar-accent-foreground: 0 0% 97%;
-  --sidebar-ring: 3 85% 55%;
+  /* ── Sidebar: near-black with slight blue tint ── */
+  --sidebar: 240 20% 3%;
+  --sidebar-foreground: 220 15% 80%;
+  --sidebar-border: 240 15% 8%;
+  --sidebar-primary: 185 100% 50%;
+  --sidebar-primary-foreground: 240 20% 2%;
+  --sidebar-accent: 240 15% 8%;
+  --sidebar-accent-foreground: 220 20% 90%;
+  --sidebar-ring: 185 100% 50%;
 
-  --radius: 0.5rem;
+  --radius: 0.375rem;
+
+  /* ── Neon glow custom properties ── */
+  --neon-cyan: #00f5ff;
+  --neon-magenta: #ff2fff;
+  --neon-green: #00ff88;
+  --neon-orange: #ff6b00;
 }
 
 @layer base {
@@ -107,9 +113,60 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        rgba(0, 245, 255, 0.012) 0px,
+        rgba(0, 245, 255, 0.012) 1px,
+        transparent 1px,
+        transparent 4px
+      );
   }
 
   html {
     color-scheme: dark;
+  }
+
+  /* Scrollbar: neon-themed */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 245, 255, 0.2);
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 245, 255, 0.4);
+  }
+}
+
+/* ── Neon glow utilities ── */
+@layer utilities {
+  .glow-cyan {
+    box-shadow: 0 0 12px rgba(0, 245, 255, 0.4), 0 0 32px rgba(0, 245, 255, 0.15);
+  }
+  .glow-magenta {
+    box-shadow: 0 0 12px rgba(255, 47, 255, 0.4), 0 0 32px rgba(255, 47, 255, 0.15);
+  }
+  .glow-green {
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  }
+  .text-glow-cyan {
+    text-shadow: 0 0 20px rgba(0, 245, 255, 0.6);
+  }
+  .text-glow-magenta {
+    text-shadow: 0 0 20px rgba(255, 47, 255, 0.6);
+  }
+  .neon-border-cyan {
+    border-color: rgba(0, 245, 255, 0.3);
+    box-shadow: 0 0 0 1px rgba(0, 245, 255, 0.1), inset 0 0 20px rgba(0, 245, 255, 0.03);
+  }
+  .neon-border-magenta {
+    border-color: rgba(255, 47, 255, 0.3);
+    box-shadow: 0 0 0 1px rgba(255, 47, 255, 0.1), inset 0 0 20px rgba(255, 47, 255, 0.03);
   }
 }

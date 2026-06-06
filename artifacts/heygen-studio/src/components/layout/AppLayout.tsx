@@ -30,25 +30,25 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  useGetCredits,
+  getGetCreditsQueryKey
+} from "@workspace/api-client-react";
 
 function RegentLogo({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
       <defs>
         <linearGradient id="rgrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#3b82f6"/>
-          <stop offset="100%" stopColor="#ef4444"/>
+          <stop offset="0%" stopColor="#00f5ff"/>
+          <stop offset="100%" stopColor="#ff2fff"/>
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="7" fill="url(#rgrad)"/>
-      <text x="7" y="24" fontFamily="Inter,Arial,sans-serif" fontWeight="800" fontSize="20" fill="white">R</text>
+      <rect width="32" height="32" rx="7" fill="transparent" stroke="url(#rgrad)" strokeWidth="1.5"/>
+      <text x="7" y="24" fontFamily="Inter,Arial,sans-serif" fontWeight="900" fontSize="20" fill="url(#rgrad)">R</text>
     </svg>
   );
 }
-import {
-  useGetCredits,
-  getGetCreditsQueryKey
-} from "@workspace/api-client-react";
 
 interface NavItem {
   name: string;
@@ -84,7 +84,7 @@ const sections: NavSection[] = [
   {
     label: "Create",
     items: [
-      { name: "Viral Engine", href: "/viral-engine", icon: FlameKindling, badge: "NEW" },
+      { name: "Viral Engine", href: "/viral-engine", icon: FlameKindling, badge: "HOT" },
       { name: "Avatar Shots", href: "/avatar-shots", icon: Camera, badge: "NEW" },
       { name: "Urban Cuts", href: "/urban-cuts", icon: Scissors, badge: "NEW" },
       { name: "Lip Sync", href: "/lip-sync", icon: Mic, badge: "NEW" },
@@ -116,17 +116,20 @@ const sections: NavSection[] = [
   {
     label: "Quick Generate",
     items: [
-      { name: "Kling Nano", href: "/generate/fal-ai%2Fkling-video%2Fv1.6%2Fnano%2Ftext-to-video", icon: Video },
+      { name: "Kling Omni", href: "/generate/kling-direct%2Fv2-master-omni", icon: Video, badge: "OMNI" },
       { name: "Seedance 1.0", href: "/generate/fal-ai%2Fseedance-1-0%2Ftext-to-video", icon: Video },
+      { name: "Seedream 3.0", href: "/generate/fal-ai%2Fseedream-3", icon: ImageIcon, badge: "TOP" },
       { name: "FLUX Schnell", href: "/generate/fal-ai%2Fflux%2Fschnell", icon: ImageIcon },
-      { name: "Imagen 4", href: "/generate/fal-ai%2Fimagen4%2Fpreview", icon: ImageIcon },
     ],
   },
 ];
 
-const badgeColors: Record<string, string> = {
-  SI: "bg-violet-500/20 text-violet-400",
-  NEW: "bg-primary/20 text-primary",
+const BADGE_STYLES: Record<string, { bg: string; color: string; border: string }> = {
+  SI:   { bg: "rgba(255,47,255,0.12)", color: "#ff2fff", border: "rgba(255,47,255,0.3)" },
+  HOT:  { bg: "rgba(255,107,0,0.12)", color: "#ff6b00", border: "rgba(255,107,0,0.3)" },
+  NEW:  { bg: "rgba(0,245,255,0.1)", color: "#00f5ff", border: "rgba(0,245,255,0.25)" },
+  OMNI: { bg: "rgba(0,255,136,0.1)", color: "#00ff88", border: "rgba(0,255,136,0.25)" },
+  TOP:  { bg: "rgba(0,245,255,0.1)", color: "#00f5ff", border: "rgba(0,245,255,0.25)" },
 };
 
 function SidebarContent({
@@ -151,31 +154,53 @@ function SidebarContent({
 
   return (
     <>
-      <div className="flex-1 py-3 px-2 flex flex-col gap-0.5 overflow-y-auto">
+      <div style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
         {sections.map((section, si) => (
-          <div key={section.label} className={si > 0 ? "mt-4" : ""}>
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1 px-2">
-              {section.label}
+          <div key={section.label} style={{ marginTop: si > 0 ? 16 : 0 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,245,255,0.35)", letterSpacing: "0.2em", textTransform: "uppercase", padding: "4px 10px 6px" }}>
+              // {section.label}
             </div>
             {section.items.map((item) => {
               const active = isActive(item.href, item.exact);
+              const badge = item.badge ? BADGE_STYLES[item.badge] : null;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
-                  className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md transition-all duration-150 text-sm ${
-                    active
-                      ? "bg-primary text-primary-foreground font-medium shadow-md shadow-primary/20"
-                      : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  }`}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 9,
+                    padding: "7px 10px", borderRadius: 4, marginBottom: 1,
+                    textDecoration: "none", fontSize: 12, cursor: "pointer",
+                    background: active ? "rgba(0,245,255,0.07)" : "transparent",
+                    borderLeft: active ? "2px solid #00f5ff" : "2px solid transparent",
+                    color: active ? "#00f5ff" : "rgba(224,232,255,0.45)",
+                    fontWeight: active ? 700 : 400,
+                    boxShadow: active ? "inset 0 0 20px rgba(0,245,255,0.04)" : "none",
+                    transition: "all 0.12s",
+                    letterSpacing: "0.01em",
+                  }}
+                  onMouseEnter={e => {
+                    if (!active) {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(0,245,255,0.04)";
+                      (e.currentTarget as HTMLElement).style.color = "rgba(224,232,255,0.75)";
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!active) {
+                      (e.currentTarget as HTMLElement).style.background = "transparent";
+                      (e.currentTarget as HTMLElement).style.color = "rgba(224,232,255,0.45)";
+                    }
+                  }}
                 >
-                  <item.icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate flex-1 text-sm">{item.name}</span>
-                  {item.badge && !active && (
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${badgeColors[item.badge] ?? "bg-muted text-muted-foreground"}`}>
-                      {item.badge}
-                    </span>
+                  <item.icon style={{ width: 14, height: 14, flexShrink: 0, filter: active ? "drop-shadow(0 0 4px #00f5ff)" : "none" }} />
+                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span>
+                  {item.badge && !active && badge && (
+                    <span style={{
+                      fontSize: 8, padding: "2px 5px", borderRadius: 2, fontWeight: 800,
+                      background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`,
+                      letterSpacing: "0.05em", flexShrink: 0,
+                    }}>{item.badge}</span>
                   )}
                 </Link>
               );
@@ -184,34 +209,59 @@ function SidebarContent({
         ))}
       </div>
 
-      <div className="p-3 border-t border-sidebar-border flex-shrink-0 flex flex-col gap-2">
-        <div className="bg-card rounded-lg p-2.5 border border-card-border flex items-center gap-2">
-          <Coins className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-xs text-muted-foreground flex-1 truncate">Regent Credits</span>
-          <span className="font-bold text-sm text-foreground flex-shrink-0">
+      {/* Footer */}
+      <div style={{ padding: "10px 10px", borderTop: "1px solid rgba(0,245,255,0.07)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Credits */}
+        <div style={{
+          background: "rgba(0,245,255,0.04)", border: "1px solid rgba(0,245,255,0.12)",
+          borderRadius: 5, padding: "9px 11px", display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <Coins style={{ width: 13, height: 13, color: "rgba(0,245,255,0.5)", flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: "rgba(224,232,255,0.4)", flex: 1 }}>Credits</span>
+          <span style={{ fontWeight: 800, fontSize: 14, color: "#00f5ff", fontVariantNumeric: "tabular-nums", textShadow: "0 0 12px rgba(0,245,255,0.4)" }}>
             {credits?.remaining_credits ?? "—"}
           </span>
         </div>
+
+        {/* User */}
         {user ? (
           <button
             onClick={logout}
-            className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            style={{
+              display: "flex", alignItems: "center", gap: 8, width: "100%",
+              padding: "7px 10px", borderRadius: 4, fontSize: 12,
+              background: "transparent", border: "none", cursor: "pointer",
+              color: "rgba(224,232,255,0.4)", transition: "all 0.12s",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,245,255,0.04)"; (e.currentTarget as HTMLElement).style.color = "rgba(224,232,255,0.7)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(224,232,255,0.4)"; }}
           >
             {user.profileImageUrl ? (
-              <img src={user.profileImageUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+              <img src={user.profileImageUrl} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid rgba(0,245,255,0.2)" }} />
             ) : (
-              <User className="w-4 h-4 flex-shrink-0" />
+              <User style={{ width: 14, height: 14, flexShrink: 0 }} />
             )}
-            <span className="flex-1 truncate text-left">{user.firstName ?? user.email ?? "Account"}</span>
-            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+            <span style={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {user.firstName ?? user.email ?? "Account"}
+            </span>
+            <LogOut style={{ width: 12, height: 12, flexShrink: 0 }} />
           </button>
         ) : (
           <button
             onClick={login}
-            className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            style={{
+              display: "flex", alignItems: "center", gap: 8, width: "100%",
+              padding: "8px 12px", borderRadius: 4, fontSize: 12, fontWeight: 700,
+              background: "rgba(0,245,255,0.08)", border: "1px solid rgba(0,245,255,0.25)",
+              color: "#00f5ff", cursor: "pointer", letterSpacing: "0.04em",
+              boxShadow: "0 0 12px rgba(0,245,255,0.08)",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,245,255,0.14)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px rgba(0,245,255,0.15)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,245,255,0.08)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 12px rgba(0,245,255,0.08)"; }}
           >
-            <LogIn className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1 text-left font-medium">Sign in</span>
+            <LogIn style={{ width: 13, height: 13, flexShrink: 0 }} />
+            <span style={{ flex: 1, textAlign: "left" }}>SIGN IN</span>
           </button>
         )}
       </div>
@@ -233,77 +283,92 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, [location]);
 
   useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [drawerOpen]);
 
   const sidebarProps = { location, credits, user, login, logout };
 
-  return (
-    <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
+  const SIDEBAR_STYLES: React.CSSProperties = {
+    width: 220,
+    background: "rgba(3,3,12,0.98)",
+    borderRight: "1px solid rgba(0,245,255,0.07)",
+    display: "flex",
+    flexDirection: "column",
+    flexShrink: 0,
+  };
 
-      {/* ── Desktop sidebar (md+) ── */}
-      <aside className="hidden md:flex w-56 lg:w-64 border-r border-sidebar-border bg-sidebar flex-col flex-shrink-0">
-        <div className="h-14 flex items-center px-4 border-b border-sidebar-border flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2 group">
-            <RegentLogo size={28} />
-            <span className="font-bold text-base tracking-tight">Regent</span>
+  return (
+    <div style={{ display: "flex", height: "100vh", width: "100%", background: "#030309", overflow: "hidden", color: "#e0e8ff" }}>
+
+      {/* Scanline overlay */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 999,
+        backgroundImage: "repeating-linear-gradient(0deg, rgba(0,245,255,0.01) 0px, rgba(0,245,255,0.01) 1px, transparent 1px, transparent 4px)",
+      }} />
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex" style={{ ...SIDEBAR_STYLES, flexDirection: "column" }}>
+        <div style={{ height: 54, display: "flex", alignItems: "center", padding: "0 14px", borderBottom: "1px solid rgba(0,245,255,0.07)", flexShrink: 0 }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <RegentLogo size={26} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: "0.08em", color: "#e0e8ff" }}>REGENT</div>
+              <div style={{ fontSize: 9, color: "rgba(0,245,255,0.45)", letterSpacing: "0.15em" }}>SYN·INT·STUDIO</div>
+            </div>
           </Link>
         </div>
         <SidebarContent {...sidebarProps} />
       </aside>
 
-      {/* ── Mobile drawer backdrop ── */}
+      {/* Mobile drawer backdrop */}
       {drawerOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
-          onClick={() => setDrawerOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 md:hidden" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+          onClick={() => setDrawerOpen(false)} />
       )}
 
-      {/* ── Mobile drawer (slides in from left) ── */}
+      {/* Mobile drawer */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex flex-col md:hidden transition-transform duration-300 ease-in-out ${
-          drawerOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className="fixed top-0 left-0 bottom-0 z-50 md:hidden flex flex-col"
+        style={{
+          ...SIDEBAR_STYLES,
+          transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.25s ease-in-out",
+        }}
       >
-        <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2">
-            <RegentLogo size={26} />
-            <span className="font-bold text-base tracking-tight">Regent</span>
+        <div style={{ height: 54, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", borderBottom: "1px solid rgba(0,245,255,0.07)", flexShrink: 0 }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <RegentLogo size={24} />
+            <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: "0.08em", color: "#e0e8ff" }}>REGENT</span>
           </Link>
           <button
             onClick={() => setDrawerOpen(false)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            style={{ padding: 6, borderRadius: 4, background: "transparent", border: "none", cursor: "pointer", color: "rgba(224,232,255,0.4)" }}
           >
-            <X className="w-4 h-4" />
+            <X style={{ width: 16, height: 16 }} />
           </button>
         </div>
         <SidebarContent {...sidebarProps} onNavigate={() => setDrawerOpen(false)} />
       </aside>
 
-      {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Main */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
 
         {/* Mobile top bar */}
-        <div className="md:hidden flex items-center gap-3 px-4 h-14 border-b border-border bg-sidebar flex-shrink-0">
+        <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px", height: 54, borderBottom: "1px solid rgba(0,245,255,0.07)", background: "rgba(3,3,12,0.98)", flexShrink: 0 }}>
           <button
             onClick={() => setDrawerOpen(true)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            style={{ padding: 6, borderRadius: 4, background: "transparent", border: "none", cursor: "pointer", color: "rgba(224,232,255,0.5)" }}
           >
-            <Menu className="w-5 h-5" />
+            <Menu style={{ width: 18, height: 18 }} />
           </button>
-          <Link href="/" className="flex items-center gap-2">
-            <RegentLogo size={24} />
-            <span className="font-bold text-sm tracking-tight">Regent</span>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <RegentLogo size={22} />
+            <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: "0.08em", color: "#e0e8ff" }}>REGENT</span>
           </Link>
         </div>
 
-        <main className="flex-1 overflow-y-auto">
+        <main style={{ flex: 1, overflowY: "auto" }}>
           {children}
         </main>
       </div>
