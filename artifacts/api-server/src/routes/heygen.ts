@@ -48,15 +48,6 @@ function extractError(body: { error?: { message?: string; code?: string | number
   return "An unexpected error occurred with HeyGen.";
 }
 
-function handleCatchError(err: unknown, res: ReturnType<typeof Router>["use"] extends never ? never : Parameters<Parameters<ReturnType<typeof Router>["use"]>[0]>[1], label: string, req: Parameters<Parameters<ReturnType<typeof Router>["use"]>[0]>[0]): void {
-  const msg = err instanceof Error ? err.message : String(err);
-  const isTimeout = err instanceof Error && err.name === "AbortError";
-  const isMissingKey = msg.includes("not set");
-  (req as { log: { error: (obj: object, msg: string) => void } }).log.error({ err }, label);
-  (res as { status: (n: number) => { json: (o: object) => void } })
-    .status(isMissingKey ? 500 : isTimeout ? 504 : 502)
-    .json({ error: isMissingKey ? msg : isTimeout ? "HeyGen request timed out." : "Failed to reach HeyGen." });
-}
 
 // GET /avatars — list avatar looks
 router.get("/avatars", async (req, res): Promise<void> => {

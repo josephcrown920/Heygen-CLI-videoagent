@@ -142,7 +142,7 @@ function SidebarContent({
 }: {
   location: string;
   onNavigate?: () => void;
-  credits?: { remaining_credits?: number } | null;
+  credits?: { remaining_credits?: number | null } | null;
   user?: { firstName: string | null; email: string | null; profileImageUrl: string | null } | null;
   login: () => void;
   logout: () => void;

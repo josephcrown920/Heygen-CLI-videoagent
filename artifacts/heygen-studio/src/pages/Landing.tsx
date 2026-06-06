@@ -1,4 +1,3 @@
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -7,6 +6,8 @@ import {
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+const LOGIN_URL = `${BASE_URL}/api/login?returnTo=${encodeURIComponent(BASE_URL || "/")}`;
+const SI_DIRECTOR_LOGIN_URL = `${BASE_URL}/api/login?returnTo=${encodeURIComponent(`${BASE_URL}/si-director`)}`;
 
 function RegentLogo({ size = 32 }: { size?: number }) {
   return (
@@ -194,12 +195,12 @@ export function Landing() {
             ))}
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <a href={`${BASE_URL}/api/login`}>
+            <a href={LOGIN_URL}>
               <button className="neon-btn-cyan" style={{ padding: "7px 18px", borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em" }}>
                 SIGN IN
               </button>
             </a>
-            <a href={`${BASE_URL}/api/login`}>
+            <a href={LOGIN_URL}>
               <button className="neon-btn-fill" style={{ padding: "7px 20px", borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em" }}>
                 GET STARTED
               </button>
@@ -233,16 +234,16 @@ export function Landing() {
           </p>
 
           <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <a href={`${BASE_URL}/api/login`}>
+            <a href={LOGIN_URL}>
               <button className="neon-btn-fill" style={{ padding: "13px 32px", borderRadius: 5, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, letterSpacing: "0.04em" }}>
                 <Play size={14} fill="currentColor" />START CREATING FREE
               </button>
             </a>
-            <Link href="/si-director">
+            <a href={SI_DIRECTOR_LOGIN_URL}>
               <button className="neon-btn-cyan" style={{ padding: "13px 32px", borderRadius: 5, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, letterSpacing: "0.04em" }}>
                 <Brain size={14} />SI DIRECTOR
               </button>
-            </Link>
+            </a>
           </div>
           <p style={{ marginTop: 14, fontSize: 11, color: "rgba(224,232,255,0.3)", letterSpacing: "0.06em" }}>
             NO CREDIT CARD · 50 FREE HEYGEN CREDITS ON SIGNUP
@@ -361,7 +362,7 @@ export function Landing() {
                 </li>
               ))}
             </ul>
-            <a href={`${BASE_URL}/api/login`}>
+            <a href={LOGIN_URL}>
               <button className="neon-btn-fill" style={{ padding: "11px 24px", borderRadius: 5, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, letterSpacing: "0.04em" }}>
                 <Brain size={14} />TRY SI DIRECTOR FREE <ArrowRight size={13} />
               </button>
@@ -438,7 +439,7 @@ export function Landing() {
                 </div>
                 <p style={{ fontSize: 13, color: "rgba(224,232,255,0.4)" }}>{plan.desc}</p>
               </div>
-              <a href={`${BASE_URL}/api/login`} style={{ display: "block" }}>
+              <a href={LOGIN_URL} style={{ display: "block" }}>
                 <button style={{
                   width: "100%", padding: "10px", borderRadius: 5, fontSize: 13, fontWeight: 700, cursor: "pointer",
                   border: plan.highlight ? "1px solid rgba(0,245,255,0.4)" : "1px solid rgba(0,245,255,0.15)",
@@ -479,7 +480,7 @@ export function Landing() {
         <div style={{ position: "relative", maxWidth: 560, margin: "0 auto" }}>
           <h2 style={{ fontSize: 40, fontWeight: 900, color: "#e0e8ff", letterSpacing: "-0.03em", marginBottom: 16 }}>Start creating today</h2>
           <p style={{ color: "rgba(224,232,255,0.4)", marginBottom: 32, fontSize: 15 }}>No credit card. No wait. 50 HeyGen credits free on signup.</p>
-          <a href={`${BASE_URL}/api/login`}>
+          <a href={LOGIN_URL}>
             <button className="neon-btn-fill" style={{ padding: "14px 40px", borderRadius: 5, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, letterSpacing: "0.04em" }}>
               <Play size={15} fill="currentColor" />GET STARTED FREE
             </button>

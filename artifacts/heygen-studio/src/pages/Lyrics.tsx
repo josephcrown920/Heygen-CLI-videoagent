@@ -329,7 +329,7 @@ export function Lyrics() {
             <div key={key} className="space-y-1">
               <Label className="text-xs text-muted-foreground">{label}</Label>
               <Input
-                value={(openSheet as Record<string, unknown>)[key] as string ?? ""}
+                value={(openSheet as unknown as Record<string, unknown>)[key] as string ?? ""}
                 onChange={e => updateSheet({ [key]: e.target.value || undefined })}
                 placeholder={placeholder}
                 className="h-8 text-xs"

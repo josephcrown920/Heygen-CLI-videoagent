@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiLoginPath, apiPath, getAppBasePath } from "@/lib/api";
 
 export interface AuthUser {
   id: string;
@@ -22,7 +23,7 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/auth/user", { credentials: "include" })
+    fetch(apiPath("/api/auth/user"), { credentials: "include" })
       .then((res) => res.json() as Promise<{ user: AuthUser | null }>)
       .then((data) => {
         if (!cancelled) {
@@ -39,14 +40,12 @@ export function useAuth(): AuthState {
     return () => { cancelled = true; };
   }, []);
 
-  const base = import.meta.env.BASE_URL?.replace(/\/+$/, "") || "";
-
   const login = useCallback(() => {
-    window.location.href = `/api/login?returnTo=${encodeURIComponent(base || "/")}`;
-  }, [base]);
+    window.location.href = apiLoginPath(getAppBasePath());
+  }, []);
 
   const logout = useCallback(() => {
-    window.location.href = "/api/logout";
+    window.location.href = apiPath("/api/logout");
   }, []);
 
   return { user, isLoading, isAuthenticated: !!user, login, logout };

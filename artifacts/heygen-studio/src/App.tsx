@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { setBaseUrl } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -26,6 +27,8 @@ import { LipSync } from "@/pages/LipSync";
 import { AppLibrary } from "@/pages/AppLibrary";
 import { ViralEngine } from "@/pages/ViralEngine";
 import { GPUHub } from "@/pages/GPUHub";
+
+setBaseUrl(import.meta.env.BASE_URL?.replace(/\/+$/, "") || null);
 
 const queryClient = new QueryClient({
   defaultOptions: {
